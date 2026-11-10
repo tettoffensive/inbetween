@@ -1,0 +1,109 @@
+.app {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 16px 24px 40px;
+  min-height: 100dvh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 48px;
+  margin-bottom: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.logo {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 9px;
+  background: linear-gradient(180deg, var(--primary-top), var(--primary-bottom));
+  border: 1px solid var(--primary-border);
+  box-shadow: var(--primary-highlight), var(--primary-shadow);
+}
+
+.logo span {
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: var(--primary-text);
+}
+
+.wordmark {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+}
+
+.source {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.sourceKind {
+  font-size: 12px;
+  font-weight: 450;
+  color: var(--text-3);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tools > :last-child {
+  margin-left: 8px;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lower {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .app {
+    padding: 8px 16px 32px;
+  }
+  .lower {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .divider,
+  .source {
+    display: none;
+  }
+}

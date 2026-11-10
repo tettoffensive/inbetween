@@ -1,0 +1,168 @@
+import { useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react'
+import { motion } from 'motion/react'
+import { clampCurve, frameCount, sample, solve, type Curve } from '../lib/bezier'
+import styles from './CurveEditor.module.css'
+
+// Plot space: x in [0,1] time, y in [-0.2, 1.2] progress. Square viewBox with margin.
+const PAD = 0.2
+const SPAN = 1 + PAD * 2
+const sx = (x: number) => x
+const sy = (y: number) => 1 - y
+const pct = (v: number) => `${((v + PAD) / SPAN) * 100}%`
+
+function pathFor([x1, y1, x2, y2]: Curve) {
+  return `M 0 ${sy(0)} C ${sx(x1)} ${sy(y1)} ${sx(x2)} ${sy(y2)} 1 ${sy(1)}`
+}
+
+export function CurveEditor({
+  curve,
+  shown,
+  ghost,
+  changeId,
+  reference,
+  t,
+  duration,
+  onDragStart,
+  onDrag,
+  onDragEnd,
+}: {
+  /** Committed curve (handle positions while dragging). */
+  curve: Curve
+  /** Tweened curve for display. */
+  shown: Curve
+  ghost: Curve | null
+  changeId: number
+  reference: Curve | null
+  t: number
+  duration: number
+  onDragStart: () => void
+  onDrag: (c: Curve) => void
+  onDragEnd: () => void
+}) {
+  const boxRef = useRef<HTMLDivElement>(null)
+  const intervals = frameCount(duration)
+  const samples = useMemo(() => sample(shown, intervals), [shown, intervals])
+  const y = solve(shown, t)
+
+  const toPlot = (e: PointerEvent) => {
+    const r = boxRef.current!.getBoundingClientRect()
+    const x = ((e.clientX - r.left) / r.width) * SPAN - PAD
+    const yy = 1 - (((e.clientY - r.top) / r.height) * SPAN - PAD)
+    return [x, yy] as const
+  }
+
+  const move = (which: 0 | 1, x: number, yy: number) => {
+    const next = [...curve] as [number, number, number, number]
+    next[which * 2] = x
+    next[which * 2 + 1] = yy
+    onDrag(clampCurve(next))
+  }
+
+  const handleProps = (which: 0 | 1) => ({
+    onPointerDown: (e: PointerEvent<HTMLButtonElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId)
+      onDragStart()
+    },
+    onPointerMove: (e: PointerEvent<HTMLButtonElement>) => {
+      if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
+      const [x, yy] = toPlot(e)
+      move(which, x, yy)
+    },
+    onPointerUp: () => onDragEnd(),
+    onKeyDown: (e: KeyboardEvent) => {
+      const step = e.shiftKey ? 0.1 : 0.01
+      const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[
+        e.key
+      ]
+      if (!d) return
+      e.preventDefault()
+      if (!e.repeat) onDragStart()
+      move(which, curve[which * 2] + d[0], curve[which * 2 + 1] + d[1])
+    },
+    onKeyUp: () => onDragEnd(),
+  })
+
+  const [x1, y1, x2, y2] = shown
+
+  return (
+    <section className={`card ${styles.editor}`} aria-label="Curve">
+      <header className={styles.head}>
+        <h2 className="eyebrow">Curve</h2>
+        <p className={`${styles.readout} tnum`}>
+          <span>
+            P1 <b>{fmt(curve[0])}</b>, <b>{fmt(curve[1])}</b>
+          </span>
+          <span>
+            P2 <b>{fmt(curve[2])}</b>, <b>{fmt(curve[3])}</b>
+          </span>
+        </p>
+      </header>
+
+      <div className={styles.plotWrap}>
+        <div className={`well ${styles.plot}`} ref={boxRef}>
+          <svg viewBox={`${-PAD} ${-PAD} ${SPAN} ${SPAN}`} className={styles.svg} aria-hidden>
+            {/* grid */}
+            {[0.25, 0.5, 0.75].map((v) => (
+              <g key={v} className={styles.grid}>
+                <line x1={v} x2={v} y1={-PAD} y2={1 + PAD} />
+                <line x1={-PAD} x2={1 + PAD} y1={sy(v)} y2={sy(v)} />
+              </g>
+            ))}
+            <rect x={0} y={0} width={1} height={1} className={styles.frame} />
+            <line x1={0} y1={1} x2={1} y2={0} className={styles.diagonal} />
+
+            {/* equal-time verticals: frame marks along the time axis */}
+            {samples.map((_, i) => (
+              <line key={i} x1={i / intervals} x2={i / intervals} y1={1} y2={1.03} className={styles.tick} />
+            ))}
+
+            {reference && <path d={pathFor(reference)} className={styles.reference} />}
+
+            {ghost && (
+              <motion.path
+                key={changeId}
+                d={pathFor(ghost)}
+                className={styles.ghost}
+                initial={{ opacity: 0.6 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: 0.9, ease: [0.4, 0, 0.2, 1], delay: 0.15 }}
+              />
+            )}
+
+            <line x1={0} y1={sy(0)} x2={x1} y2={sy(y1)} className={styles.arm} />
+            <line x1={1} y1={sy(1)} x2={x2} y2={sy(y2)} className={styles.arm} />
+
+            <path d={pathFor(shown)} className={styles.curve} />
+
+            {samples.map((v, i) => (
+              <circle key={i} cx={i / intervals} cy={sy(v)} r={0.009} className={styles.sample} />
+            ))}
+
+            {/* playhead */}
+            <line x1={t} x2={t} y1={-PAD} y2={1 + PAD} className={styles.playhead} />
+            <line x1={-PAD} x2={t} y1={sy(y)} y2={sy(y)} className={styles.playheadH} />
+            <circle cx={t} cy={sy(y)} r={0.018} className={styles.playDot} />
+          </svg>
+
+          <button
+            className={styles.handle}
+            style={{ left: pct(x1), top: pct(1 - y1) }}
+            aria-label={`Start handle, ${fmt(curve[0])}, ${fmt(curve[1])}. Arrow keys to move.`}
+            {...handleProps(0)}
+          />
+          <button
+            className={styles.handle}
+            style={{ left: pct(x2), top: pct(1 - y2) }}
+            aria-label={`Landing handle, ${fmt(curve[2])}, ${fmt(curve[3])}. Arrow keys to move.`}
+            {...handleProps(1)}
+          />
+
+          <span className={`${styles.axis} ${styles.axisX}`}>time →</span>
+          <span className={`${styles.axis} ${styles.axisY}`}>progress →</span>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const fmt = (n: number) => n.toFixed(2)

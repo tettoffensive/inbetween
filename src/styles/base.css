@@ -1,0 +1,139 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+  transition: background-color var(--dur) var(--ease-out);
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+
+/* ---------- Surfaces ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+}
+
+.well {
+  background: var(--well);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-well);
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface), var(--surface-hover));
+  box-shadow: var(--shadow-control);
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast);
+}
+
+.btn:hover {
+  background: var(--surface-hover);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+
+.btn-icon {
+  width: 32px;
+  padding: 0;
+}
+
+.btn-primary {
+  color: var(--primary-text);
+  border-color: var(--primary-border);
+  background: linear-gradient(180deg, var(--primary-top), var(--primary-bottom));
+  box-shadow: var(--primary-highlight), var(--primary-shadow);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(180deg, var(--primary-top), var(--primary-top));
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--text-2);
+}
+
+.btn-ghost:hover {
+  background: var(--well);
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+  }
+}
