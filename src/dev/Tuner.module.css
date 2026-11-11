@@ -197,6 +197,12 @@
   box-shadow: var(--shadow-control);
 }
 
+@media (max-width: 760px) {
+  .fab {
+    bottom: 84px;
+  }
+}
+
 @media (max-width: 480px) {
   .panel {
     left: 16px;

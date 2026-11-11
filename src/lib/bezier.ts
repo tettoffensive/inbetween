@@ -103,6 +103,14 @@ export function parse(input: string): ParseResult {
   return { ok: false, error: 'Couldn’t find a cubic-bezier() or easing keyword.' }
 }
 
+/** Duration from pasted CSS, e.g. "600ms" or ".3s". Clamped to the slider range. */
+export function parseDuration(input: string): number | null {
+  const m = input.match(/(?:^|[\s:,(])(\d*\.?\d+)(ms|s)\b/i)
+  if (!m) return null
+  const ms = m[2].toLowerCase() === 's' ? parseFloat(m[1]) * 1000 : parseFloat(m[1])
+  return Math.round(Math.min(1500, Math.max(100, ms)) / 10) * 10
+}
+
 /** Deterministic feel nudges. Each moves one handle; works on any curve. */
 export type Nudge = 'start-gentler' | 'start-snappier' | 'land-softer' | 'land-firmer'
 const STEP = 0.06

@@ -1,0 +1,157 @@
+.dock {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  z-index: 40;
+  width: min(680px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.dock > * {
+  pointer-events: auto;
+}
+
+/* Floating tier: the one overlay in the workspace. */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 8px 0 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-floating);
+  transition:
+    border-color var(--dur-fast),
+    box-shadow var(--dur-fast);
+}
+
+.bar[data-invalid] {
+  border-color: var(--danger);
+  box-shadow: var(--shadow-floating), 0 0 0 3px var(--danger-soft);
+}
+
+.tag {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--well);
+  border: 1px solid var(--border-soft);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.code,
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.code {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-2);
+  cursor: text;
+  transition:
+    background-color var(--dur-fast),
+    border-color var(--dur-fast);
+}
+
+.code:hover {
+  background: var(--well);
+  border-color: var(--border-soft);
+}
+
+.input {
+  border: 1px solid var(--accent);
+  background: var(--well);
+  box-shadow: var(--shadow-well), 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
+.bar[data-invalid] .input {
+  border-color: var(--danger);
+  box-shadow: var(--shadow-well);
+}
+
+.prop,
+.num {
+  color: var(--text);
+}
+
+.fn {
+  color: var(--accent-strong);
+}
+
+.error {
+  align-self: center;
+  max-width: 100%;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-control);
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.copy {
+  position: relative;
+  flex: none;
+  height: 36px;
+  min-width: 92px;
+  overflow: hidden;
+}
+
+.copyLayer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.copyLayer[data-overlay] {
+  position: absolute;
+  inset: 0;
+  justify-content: center;
+  background: inherit;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 320ms var(--ease-out);
+}
+
+.copyLayer[data-on] {
+  clip-path: inset(0 0 0 0);
+}
+
+@media (max-width: 480px) {
+  .tag,
+  .prefix,
+  .copyText {
+    display: none;
+  }
+  .copy {
+    min-width: 40px;
+  }
+}

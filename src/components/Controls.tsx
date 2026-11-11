@@ -1,8 +1,7 @@
-import { memo, useEffect, useRef, useState, type Dispatch } from 'react'
+import { memo, useEffect, useRef, type Dispatch } from 'react'
 import { Slider, ToggleGroup } from 'radix-ui'
-import { AnimatePresence, motion } from 'motion/react'
-import { CheckIcon, CopyIcon, DrawingPinFilledIcon, DrawingPinIcon } from '@radix-ui/react-icons'
-import { PRESETS, format, nudge, parse, type Curve, type Nudge } from '../lib/bezier'
+import { DrawingPinFilledIcon, DrawingPinIcon } from '@radix-ui/react-icons'
+import { PRESETS, nudge, type Curve, type Nudge } from '../lib/bezier'
 import { presetName, type Action } from '../lib/useEditor'
 import styles from './Controls.module.css'
 
@@ -54,22 +53,6 @@ export const ShapePanel = memo(function ShapePanel({
           {reference ? 'Clear reference' : 'Pin as reference'}
         </button>
       </Section>
-    </aside>
-  )
-})
-
-export const CodePanel = memo(function CodePanel({
-  curve,
-  duration,
-  dispatch,
-}: {
-  curve: Curve
-  duration: number
-  dispatch: Dispatch<Action>
-}) {
-  return (
-    <aside className={`card ${styles.panel}`} aria-label="CSS" style={{ gridArea: 'code' }}>
-      <ImportExport curve={curve} duration={duration} dispatch={dispatch} />
     </aside>
   )
 })
@@ -195,103 +178,5 @@ function MiniCurve({ curve: [x1, y1, x2, y2] }: { curve: Curve }) {
     <svg viewBox="-0.1 -0.1 1.2 1.2" className={styles.mini} aria-hidden>
       <path d={`M0 1 C${x1} ${1 - y1} ${x2} ${1 - y2} 1 0`} />
     </svg>
-  )
-}
-
-function ImportExport({ curve, duration, dispatch }: { curve: Curve; duration: number; dispatch: Dispatch<Action> }) {
-  const [draft, setDraft] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
-  const css = `transition: transform ${duration}ms ${format(curve)};`
-
-  const apply = (text = draft) => {
-    const r = parse(text)
-    if (!r.ok) {
-      setError(r.error)
-      return
-    }
-    setError(null)
-    setDraft('')
-    dispatch({ type: 'commit', curve: r.curve, source: 'imported' })
-  }
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(css)
-    } catch {
-      /* clipboard blocked; still show state so the demo reads */
-    }
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1400)
-  }
-
-  return (
-    <>
-      <Section title="Import">
-        <form
-          className={styles.importRow}
-          onSubmit={(e) => {
-            e.preventDefault()
-            apply()
-          }}
-        >
-          <input
-            className={styles.input}
-            data-invalid={!!error || undefined}
-            value={draft}
-            spellCheck={false}
-            placeholder="cubic-bezier(0.2, 0, 0, 1)"
-            aria-label="Paste an easing to import"
-            aria-invalid={!!error}
-            aria-describedby={error ? 'import-error' : undefined}
-            onChange={(e) => {
-              setDraft(e.target.value)
-              if (error) setError(null)
-            }}
-            onPaste={(e) => {
-              const text = e.clipboardData.getData('text')
-              e.preventDefault()
-              setDraft(text)
-              apply(text)
-            }}
-          />
-          <button className="btn" type="submit" disabled={!draft.trim()}>
-            Apply
-          </button>
-        </form>
-        <AnimatePresence initial={false}>
-          {error && (
-            <motion.p
-              id="import-error"
-              role="alert"
-              className={styles.error}
-              initial={{ height: 0, opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
-              animate={{ height: 'auto', opacity: 1, clipPath: 'inset(0 0 0% 0)' }}
-              exit={{ height: 0, opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
-              transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
-            >
-              <span>{error} Current motion is unchanged.</span>
-            </motion.p>
-          )}
-        </AnimatePresence>
-      </Section>
-
-      <Section title="Export" aside="CSS">
-        <code className={styles.code}>
-          <span className={styles.prop}>transition</span>: transform{' '}
-          <span className={styles.num}>{duration}ms</span>{' '}
-          <span className={styles.fn}>{format(curve)}</span>;
-        </code>
-        <button className={`btn btn-primary ${styles.copy}`} onClick={copy} aria-live="polite">
-          {/* Two stacked labels; the second is revealed with clip-path. */}
-          <span className={styles.copyLayer}>
-            <CopyIcon /> Copy CSS
-          </span>
-          <span className={styles.copyLayer} data-overlay data-on={copied || undefined} aria-hidden={!copied}>
-            <CheckIcon /> Copied
-          </span>
-        </button>
-      </Section>
-    </>
   )
 }

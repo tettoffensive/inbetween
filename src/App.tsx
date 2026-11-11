@@ -6,7 +6,8 @@ import { usePlayback, useTheme, useTweenedCurve } from './hooks/hooks'
 import { Segmented } from './components/Segmented'
 import { Stage } from './components/Stage'
 import { CurveEditor } from './components/CurveEditor'
-import { CodePanel, ShapePanel } from './components/Controls'
+import { ShapePanel } from './components/Controls'
+import { OutputBar } from './components/OutputBar'
 import styles from './App.module.css'
 
 export default function App() {
@@ -124,8 +125,8 @@ export default function App() {
           tickRate={state.tickRate}
           onTickRate={(value) => dispatch({ type: 'tickRate', value })}
         />
-        <CodePanel curve={curve} duration={state.duration} dispatch={dispatch} />
       </main>
+      <OutputBar curve={curve} duration={state.duration} dispatch={dispatch} />
     </div>
   )
 }
