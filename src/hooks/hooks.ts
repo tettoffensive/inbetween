@@ -37,39 +37,74 @@ export function useTweenedCurve(target: Curve, instant: boolean): Curve {
 
 const HOLD_MS = 500
 
+/**
+ * How the preview loops:
+ * - 'alternate': forward, hold, backward, hold (CSS animation-direction: alternate).
+ *   Nothing ever snaps back.
+ * - 'continue': forward, hold, forward again from where it left off. `cycle`
+ *   counts completed runs so cumulative properties (rotation) keep going.
+ */
+export type LoopMode = 'alternate' | 'continue'
+
 /** Looping playback clock. t is elapsed fraction of the duration (0–1). */
-export function usePlayback(duration: number) {
+export function usePlayback(duration: number, mode: LoopMode) {
   const reduced = useReducedMotion()
   const [t, setT] = useState(0)
+  const [cycle, setCycle] = useState(0)
   const [playing, setPlaying] = useState(!reduced)
   const tRef = useRef(0)
+  const dirRef = useRef<1 | -1>(1)
+  const cycleRef = useRef(0)
+
+  // Switching to 'continue' always runs forward.
+  useEffect(() => {
+    if (mode === 'continue') dirRef.current = 1
+  }, [mode])
 
   useEffect(() => {
     if (!playing) return
     let raf = 0
-    // Resume from the current position.
-    let origin = performance.now() - tRef.current * duration
+    let last = performance.now()
+    let hold = 0
     const tick = (now: number) => {
-      let elapsed = now - origin
-      if (elapsed > duration + HOLD_MS) {
-        origin = now
-        elapsed = 0
+      // Cap the step so a backgrounded tab resumes smoothly instead of skipping.
+      const dt = Math.min(now - last, 50)
+      last = now
+      if (hold > 0) {
+        hold -= dt
+        if (hold <= 0) {
+          // End of a pause: turn around, or start the next forward run.
+          if (mode === 'alternate') {
+            dirRef.current = tRef.current >= 1 ? -1 : 1
+          } else if (tRef.current >= 1) {
+            tRef.current = 0
+            cycleRef.current += 1
+            setCycle(cycleRef.current)
+          }
+        }
+      } else {
+        let next = tRef.current + (dirRef.current * dt) / duration
+        if (next >= 1 || next <= 0) {
+          next = next >= 1 ? 1 : 0
+          hold = HOLD_MS
+        }
+        tRef.current = next
       }
-      const next = Math.min(1, elapsed / duration)
-      tRef.current = next
-      setT(next)
+      setT(tRef.current)
       raf = requestAnimationFrame(tick)
     }
+    // Resuming exactly at an end: pause there first, then continue.
+    if (tRef.current >= 1 || (tRef.current <= 0 && dirRef.current === -1)) hold = HOLD_MS
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [playing, duration])
+  }, [playing, duration, mode])
 
   const scrub = (value: number) => {
     setPlaying(false)
     tRef.current = value
     setT(value)
   }
-  return { t, playing, setPlaying, scrub }
+  return { t, cycle, playing, setPlaying, scrub }
 }
 
 export function useElementWidth<T extends HTMLElement>(ref: RefObject<T | null>) {

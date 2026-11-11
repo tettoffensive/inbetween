@@ -15,7 +15,7 @@ export default function App() {
   const [theme, setTheme] = useTheme()
   const { curve, source } = state.present
   const shown = useTweenedCurve(curve, state.dragging)
-  const playback = usePlayback(state.duration)
+  const playback = usePlayback(state.duration, state.subject === 'rotate' ? 'continue' : 'alternate')
   const { setPlaying } = playback
 
   useEffect(() => {
@@ -118,6 +118,7 @@ export default function App() {
           subject={state.subject}
           onSubject={(value) => dispatch({ type: 'subject', value })}
           t={playback.t}
+          cycle={playback.cycle}
           playing={playback.playing}
           onPlaying={playback.setPlaying}
           onScrub={playback.scrub}

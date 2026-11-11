@@ -30,6 +30,7 @@ export function Stage({
   subject,
   onSubject,
   t,
+  cycle,
   playing,
   onPlaying,
   onScrub,
@@ -43,6 +44,8 @@ export function Stage({
   subject: Subject
   onSubject: (s: Subject) => void
   t: number
+  /** Completed loop runs; rotation accumulates across them. */
+  cycle: number
   playing: boolean
   onPlaying: (p: boolean) => void
   onScrub: (t: number) => void
@@ -59,7 +62,7 @@ export function Stage({
       </header>
 
       <div className={styles.lanes}>
-        <Lane curve={curve} t={t} subject={subject} intervals={intervals} label="Current" />
+        <Lane curve={curve} t={t} cycle={cycle} subject={subject} intervals={intervals} label="Current" />
         <AnimatePresence initial={false}>
           {reference && (
             <motion.div
@@ -69,7 +72,7 @@ export function Stage({
               exit={{ opacity: 0, height: 0, clipPath: 'inset(0 0 100% 0)' }}
               transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
             >
-              <Lane curve={reference} t={t} subject={subject} intervals={intervals} label="Reference" reference />
+              <Lane curve={reference} t={t} cycle={cycle} subject={subject} intervals={intervals} label="Reference" reference />
             </motion.div>
           )}
         </AnimatePresence>
@@ -138,6 +141,7 @@ const TickMarks = memo(function TickMarks({ intervals }: { intervals: number }) 
 function Lane({
   curve,
   t,
+  cycle,
   subject,
   intervals,
   label,
@@ -145,6 +149,7 @@ function Lane({
 }: {
   curve: Curve
   t: number
+  cycle: number
   subject: Subject
   intervals: number
   label: string
@@ -176,7 +181,7 @@ function Lane({
       subjectStyle = { left: center, opacity: Math.min(1, Math.max(0, y)) }
       break
     case 'rotate':
-      subjectStyle = { left: center, transform: `rotate(${y * 180}deg)` }
+      subjectStyle = { left: center, transform: `rotate(${(cycle + y) * 180}deg)` }
       break
   }
 
