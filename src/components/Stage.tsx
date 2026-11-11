@@ -133,7 +133,7 @@ export function Stage({
           size="sm"
           value={String(speed)}
           onChange={(v) => onSpeed(Number(v) as Speed)}
-          options={SPEEDS.map((s) => ({ value: String(s), label: `${s}×`, title: `Play at ${s}× speed` }))}
+          options={SPEEDS.map((s) => ({ value: String(s), label: `${s}x`, title: `Play at ${s}x speed` }))}
         />
       </div>
       <div className={styles.meta}>
