@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type Dispatch } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { CheckIcon, CopyIcon } from '@radix-ui/react-icons'
+import { CheckIcon, ClipboardIcon, CopyIcon } from '@radix-ui/react-icons'
 import { format, parse, parseDuration, type Curve } from '../lib/bezier'
 import type { Action } from '../lib/useEditor'
 import styles from './OutputBar.module.css'
@@ -31,8 +31,10 @@ export function OutputBar({ curve, duration, dispatch }: { curve: Curve; duratio
     return true
   }
 
-  const startEditing = () => {
-    setDraft(css)
+  /** Open the field: prefilled with the current CSS (click) or empty (Paste). */
+  const startEditing = (prefill = css) => {
+    setDraft(prefill)
+    setError(null)
     setEditing(true)
   }
 
@@ -102,6 +104,7 @@ export function OutputBar({ curve, duration, dispatch }: { curve: Curve; duratio
               onFocus={(e) => e.currentTarget.select()}
               className={styles.input}
               value={draft}
+              placeholder="Paste cubic-bezier() or a transition…"
               spellCheck={false}
               aria-label="Paste CSS easing to import"
               aria-invalid={!!error}
@@ -125,7 +128,7 @@ export function OutputBar({ curve, duration, dispatch }: { curve: Curve; duratio
             />
           </form>
         ) : (
-          <button className={styles.code} onClick={startEditing} title="Click or paste anywhere to import CSS">
+          <button className={styles.code} onClick={() => startEditing()} title="Click or paste anywhere to import CSS">
             <span className={styles.prefix}>
               <span className={styles.prop}>transition</span>: transform <span className={styles.num}>{duration}ms</span>{' '}
             </span>
@@ -134,6 +137,14 @@ export function OutputBar({ curve, duration, dispatch }: { curve: Curve; duratio
           </button>
         )}
 
+        <button
+          className={`btn btn-ghost ${styles.paste}`}
+          onClick={() => startEditing('')}
+          aria-label="Paste CSS to import"
+          title="Paste CSS to import (or ⌘V anywhere)"
+        >
+          <ClipboardIcon /> <span className={styles.copyText}>Paste</span>
+        </button>
         <button className={`btn btn-primary ${styles.copy}`} onClick={copy} aria-live="polite" aria-label="Copy CSS">
           <span className={styles.copyLayer}>
             <CopyIcon /> <span className={styles.copyText}>Copy</span>
