@@ -102,41 +102,45 @@
   box-shadow: none;
 }
 
-/* Equal-time spacing dots */
-.dots {
+/* Spacing ruler */
+.ruler {
   position: relative;
-  height: 14px;
-  margin-top: 4px;
+  height: 20px;
+  margin-top: 2px;
 }
 
-.dot {
+.fine,
+.mark {
   position: absolute;
   top: 50%;
-  width: 5px;
-  height: 5px;
-  margin: -2.5px 0 0 -2.5px;
-  border-radius: 50%;
-  background: var(--accent);
-  opacity: 0.45;
+  width: 1px;
+  border-radius: 1px;
+  background: var(--text);
+}
+
+.fine {
+  height: 12px;
+  margin: -6px 0 0 -0.5px;
+  opacity: 0.13;
+}
+
+.mark {
+  height: 18px;
+  width: 1.5px;
+  margin: -9px 0 0 -0.75px;
+  opacity: 0.85;
   transition:
-    transform var(--dur-fast) var(--ease-out),
-    opacity var(--dur-fast);
+    background-color var(--dur-fast),
+    transform var(--dur-fast) var(--ease-out);
 }
 
-.dot[data-key] {
-  width: 3px;
-  height: 11px;
-  margin: -5.5px 0 0 -1.5px;
-  border-radius: 2px;
-  opacity: 0.7;
-}
-
-.dot[data-active] {
+.mark[data-active] {
+  background: var(--accent);
   opacity: 1;
-  transform: scale(1.6);
+  transform: scaleY(1.25);
 }
 
-.lane[data-reference] .dot {
+.lane[data-reference] .mark {
   background: var(--reference);
 }
 

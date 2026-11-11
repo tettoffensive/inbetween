@@ -11,6 +11,8 @@ import styles from './Stage.module.css'
 
 const TRAVEL = 200
 const SIZE = 52
+/** Faint ticks per drawing interval in the spacing ruler. */
+const FINE = 3
 
 const SUBJECTS: { value: Subject; label: string }[] = [
   { value: 'slide', label: 'Slide' },
@@ -103,7 +105,7 @@ export function Stage({
         <span className={`${styles.durValue} tnum`}>{duration}ms</span>
       </div>
       <p className={`${styles.meta} tnum`}>
-        {intervals + 1} drawings at {FPS} fps · dots are equal time apart
+        {intervals + 1} drawings at {FPS} fps · bold ticks are equal time apart
       </p>
     </section>
   )
@@ -167,13 +169,17 @@ function Lane({
           {subject !== 'dot' && <span className={styles.glyph} />}
         </div>
       </div>
-      <div className={styles.dots} aria-hidden>
+      {/* Spacing ruler: faint ticks are an even time grid (where linear motion
+          would be), bold ticks are where each drawing actually lands. */}
+      <div className={styles.ruler} aria-hidden>
+        {Array.from({ length: intervals * FINE + 1 }, (_, i) => (
+          <span key={`f${i}`} className={styles.fine} style={{ left: start + SIZE / 2 + (i / (intervals * FINE)) * travel }} />
+        ))}
         {samples.map((v, i) => (
           <span
             key={i}
-            className={styles.dot}
+            className={styles.mark}
             data-active={i === active || undefined}
-            data-key={i === 0 || i === intervals || undefined}
             style={{ left: start + SIZE / 2 + v * travel }}
           />
         ))}
