@@ -168,15 +168,15 @@ function Lane({
   // Rotation instead keeps turning forward.
   const back = subject !== 'rotate' && cycle % 2 === 1
   const y = back ? 1 - p : p
-  // Physical position along the ruler (0 = left) for a value on the curve.
-  const at = (u: number) => (back ? 1 - u : u)
   const samples = useMemo(() => sample(curve, intervals), [curve, intervals])
   // One wave crest sweeping the ruler at a steady rate (driven by time), so
   // it finishes exactly when the motion does. Every tick swells by its
   // distance from the crest. Super-Gaussian for a sharp fall-off.
   const x0 = start + SIZE / 2
+  // The ruler charts the curve itself, which runs forward on every leg, so it
+  // never mirrors: the wave always sweeps left → right with time.
   const wave = (pos: number) => {
-    const d = ((pos - at(t)) * travel) / WAVE_WIDTH
+    const d = ((pos - t) * travel) / WAVE_WIDTH
     return Math.exp(-(d * d * d * d))
   }
   // Faint ticks at a fixed pixel pitch so they never merge at long durations.
@@ -233,7 +233,7 @@ function Lane({
           <span
             key={i}
             className={styles.mark}
-            style={{ left: x0 + at(v) * travel, transform: `scaleY(${1 + 0.55 * wave(at(v))})` }}
+            style={{ left: x0 + v * travel, transform: `scaleY(${1 + 0.55 * wave(v)})` }}
           />
         ))}
       </div>
