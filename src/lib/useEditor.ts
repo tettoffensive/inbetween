@@ -1,5 +1,5 @@
 import { useReducer } from 'react'
-import { PRESETS, sameCurve, type Curve } from './bezier'
+import { PRESETS, sameCurve, type Curve, type TickRate } from './bezier'
 
 export type Subject = 'slide' | 'dot' | 'scale' | 'fade'
 export type Source = 'preset' | 'custom' | 'imported'
@@ -19,6 +19,7 @@ export type EditorState = {
   duration: number
   subject: Subject
   reference: Curve | null
+  tickRate: TickRate
 }
 
 export type Action =
@@ -31,6 +32,7 @@ export type Action =
   | { type: 'redo' }
   | { type: 'duration'; value: number }
   | { type: 'subject'; value: Subject }
+  | { type: 'tickRate'; value: TickRate }
   | { type: 'pin' }
   | { type: 'unpin' }
 
@@ -90,6 +92,8 @@ function reducer(s: EditorState, a: Action): EditorState {
       return { ...s, duration: a.value }
     case 'subject':
       return { ...s, subject: a.value }
+    case 'tickRate':
+      return { ...s, tickRate: a.value }
     case 'pin':
       return { ...s, reference: s.present.curve }
     case 'unpin':
@@ -107,6 +111,7 @@ const initial: EditorState = {
   duration: 600,
   subject: 'slide',
   reference: null,
+  tickRate: 24,
 }
 
 export function useEditor() {

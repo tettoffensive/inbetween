@@ -35,10 +35,12 @@ export function solve([x1, y1, x2, y2]: Curve, x: number): number {
   return at(t, y1, y2)
 }
 
-/** Film timing: one drawing per frame at 24fps. Returns the number of intervals. */
-export const FPS = 24
-export function frameCount(durationMs: number) {
-  return Math.max(2, Math.round((durationMs / 1000) * FPS))
+/** Tick sampling rate (ticks per second), like drawings in a film spacing chart.
+    Playback itself runs at the display's refresh rate. */
+export type TickRate = 12 | 24 | 30
+export const TICK_RATES: TickRate[] = [12, 24, 30]
+export function frameCount(durationMs: number, rate: TickRate = 24) {
+  return Math.max(2, Math.round((durationMs / 1000) * rate))
 }
 
 /** Progress at equal time intervals: index i is at time i / intervals. */

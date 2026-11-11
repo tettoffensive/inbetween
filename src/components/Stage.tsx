@@ -2,7 +2,7 @@ import { memo, useMemo, useRef } from 'react'
 import { Slider } from 'radix-ui'
 import { AnimatePresence, motion } from 'motion/react'
 import { PauseIcon, PlayIcon } from '@radix-ui/react-icons'
-import { FPS, frameCount, sample, solve, type Curve } from '../lib/bezier'
+import { TICK_RATES, frameCount, sample, solve, type Curve, type TickRate } from '../lib/bezier'
 import type { Subject } from '../lib/useEditor'
 import { useElementWidth } from '../hooks/hooks'
 import { Segmented } from './Segmented'
@@ -32,6 +32,8 @@ export function Stage({
   onPlaying,
   onScrub,
   onDuration,
+  tickRate,
+  onTickRate,
 }: {
   curve: Curve
   reference: Curve | null
@@ -43,9 +45,10 @@ export function Stage({
   onPlaying: (p: boolean) => void
   onScrub: (t: number) => void
   onDuration: (ms: number) => void
+  tickRate: TickRate
+  onTickRate: (r: TickRate) => void
 }) {
-  const intervals = frameCount(duration)
-  const frame = Math.round(t * intervals)
+  const intervals = frameCount(duration, tickRate)
 
   return (
     <section className={`card ${styles.stage}`} aria-label="Preview" style={{ gridArea: 'preview' }}>
@@ -94,8 +97,9 @@ export function Stage({
           </Slider.Track>
           <Slider.Thumb className={styles.scrubThumb} />
         </Slider.Root>
-        <span className={`${styles.frame} tnum`} title={`${Math.round(t * duration)}ms`}>
-          f{String(frame).padStart(2, '0')}
+        <span className={`${styles.elapsed} tnum`} aria-label="Elapsed time">
+          {Math.round(t * duration)}
+          <span className={styles.unit}>ms</span>
         </span>
       </footer>
 
@@ -104,9 +108,17 @@ export function Stage({
         <DurationSlider value={duration} onChange={onDuration} />
         <span className={`${styles.durValue} tnum`}>{duration}ms</span>
       </div>
-      <p className={`${styles.meta} tnum`}>
-        {intervals + 1} drawings at {FPS} fps · bold ticks are equal time apart
-      </p>
+      <div className={styles.meta}>
+        <p className="tnum">Ticks every 1/{tickRate} s · plays at full refresh rate</p>
+        <Segmented
+          id="tickrate"
+          label="Ticks per second"
+          size="sm"
+          value={String(tickRate)}
+          onChange={(v) => onTickRate(Number(v) as TickRate)}
+          options={TICK_RATES.map((r) => ({ value: String(r), label: String(r), title: `${r} ticks per second` }))}
+        />
+      </div>
     </section>
   )
 }

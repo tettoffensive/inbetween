@@ -1,6 +1,6 @@
 import { useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react'
 import { motion } from 'motion/react'
-import { clampCurve, frameCount, sample, solve, type Curve } from '../lib/bezier'
+import { clampCurve, frameCount, sample, solve, type Curve, type TickRate } from '../lib/bezier'
 import styles from './CurveEditor.module.css'
 
 // Plot space: x in [0,1] time, y in [-0.2, 1.2] progress. Square viewBox with margin.
@@ -22,6 +22,7 @@ export function CurveEditor({
   reference,
   t,
   duration,
+  tickRate,
   onDragStart,
   onDrag,
   onDragEnd,
@@ -35,12 +36,13 @@ export function CurveEditor({
   reference: Curve | null
   t: number
   duration: number
+  tickRate: TickRate
   onDragStart: () => void
   onDrag: (c: Curve) => void
   onDragEnd: () => void
 }) {
   const boxRef = useRef<HTMLDivElement>(null)
-  const intervals = frameCount(duration)
+  const intervals = frameCount(duration, tickRate)
   const samples = useMemo(() => sample(shown, intervals), [shown, intervals])
   const y = solve(shown, t)
 

@@ -105,6 +105,7 @@ export default function App() {
           reference={state.reference}
           t={playback.t}
           duration={state.duration}
+          tickRate={state.tickRate}
           onDragStart={() => dispatch({ type: 'checkpoint', drag: true })}
           onDrag={(c) => dispatch({ type: 'update', curve: c, source: 'custom' })}
           onDragEnd={() => dispatch({ type: 'endDrag' })}
@@ -120,6 +121,8 @@ export default function App() {
           onPlaying={playback.setPlaying}
           onScrub={playback.scrub}
           onDuration={(value) => dispatch({ type: 'duration', value })}
+          tickRate={state.tickRate}
+          onTickRate={(value) => dispatch({ type: 'tickRate', value })}
         />
         <CodePanel curve={curve} duration={state.duration} dispatch={dispatch} />
       </main>
