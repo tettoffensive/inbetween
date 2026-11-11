@@ -29,8 +29,14 @@ export function nudgeNumberAt(
     const step = 10 ** exponent * multiplier
 
     let value = Number(raw) + direction * step
-    if (bounds) value = Math.min(bounds[1], Math.max(bounds[0], value))
-    const next = (Math.round(value * 10 ** decimals) / 10 ** decimals).toFixed(decimals)
+    let places = decimals
+    if (bounds && (value < bounds[0] || value > bounds[1])) {
+      value = Math.min(bounds[1], Math.max(bounds[0], value))
+      // Keep the bound's precision (1 → 1.5, not 2).
+      places = Math.max(places, (String(value).split('.')[1] ?? '').length)
+    }
+    const decimalsOut = places
+    const next = (Math.round(value * 10 ** decimalsOut) / 10 ** decimalsOut).toFixed(decimalsOut)
     // Keep the caret at the same distance from the number's end so it stays
     // beside the same decimal place even if the integer part grows.
     return {

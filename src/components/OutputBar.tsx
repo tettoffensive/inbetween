@@ -45,10 +45,11 @@ export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatc
     const el = e.currentTarget
     const caret = el.selectionStart ?? 0
     const dir = e.key === 'ArrowUp' ? 1 : -1
-    // x arguments (1st and 3rd) must stay in 0–1: clamp to the edge.
+    // Clamp to the edge: x (1st, 3rd) to 0–1 as CSS requires; y (2nd, 4th)
+    // to the same −0.5–1.5 range handle dragging allows, so it stays on screen.
     const open = draft.indexOf('(')
     const arg = open >= 0 && caret > open ? draft.slice(open + 1, caret).split(',').length - 1 : -1
-    const bounds = arg === 0 || arg === 2 ? ([0, 1] as const) : undefined
+    const bounds = arg === 0 || arg === 2 ? ([0, 1] as const) : arg === 1 || arg === 3 ? ([-0.5, 1.5] as const) : undefined
     const r = nudgeNumberAt(draft, caret, dir, e.shiftKey ? 10 : 1, bounds)
     if (!r) return
     e.preventDefault()
