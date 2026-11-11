@@ -118,6 +118,7 @@ export default function App() {
           subject={state.subject}
           onSubject={(value) => dispatch({ type: 'subject', value })}
           t={playback.t}
+          waveT={playback.waveT}
           cycle={playback.cycle}
           playing={playback.playing}
           onPlaying={playback.setPlaying}

@@ -47,6 +47,8 @@ export function usePlayback(duration: number) {
   const reduced = useReducedMotion()
   const [t, setT] = useState(0)
   const [cycle, setCycle] = useState(0)
+  /** Like t, but keeps running through the hold (> 1) so effects can follow through. */
+  const [waveT, setWaveT] = useState(0)
   const [playing, setPlaying] = useState(!reduced)
   const tRef = useRef(0)
   const cycleRef = useRef(0)
@@ -73,6 +75,7 @@ export function usePlayback(duration: number) {
         if (tRef.current >= 1) hold = HOLD_MS
       }
       setT(tRef.current)
+      setWaveT(hold > 0 ? 1 + (HOLD_MS - hold) / duration : tRef.current)
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -83,8 +86,9 @@ export function usePlayback(duration: number) {
     setPlaying(false)
     tRef.current = value
     setT(value)
+    setWaveT(value)
   }
-  return { t, cycle, playing, setPlaying, scrub }
+  return { t, waveT, cycle, playing, setPlaying, scrub }
 }
 
 export function useElementWidth<T extends HTMLElement>(ref: RefObject<T | null>) {

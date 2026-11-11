@@ -33,6 +33,7 @@ export function Stage({
   subject,
   onSubject,
   t,
+  waveT,
   cycle,
   playing,
   onPlaying,
@@ -47,6 +48,8 @@ export function Stage({
   subject: Subject
   onSubject: (s: Subject) => void
   t: number
+  /** Time for the ruler wave; continues past 1 during the hold. */
+  waveT: number
   /** Completed loop runs; rotation accumulates across them. */
   cycle: number
   playing: boolean
@@ -65,7 +68,7 @@ export function Stage({
       </header>
 
       <div className={styles.lanes}>
-        <Lane curve={curve} t={t} cycle={cycle} subject={subject} intervals={intervals} label="Current" />
+        <Lane curve={curve} t={t} waveT={waveT} cycle={cycle} subject={subject} intervals={intervals} label="Current" />
         <AnimatePresence initial={false}>
           {reference && (
             <motion.div
@@ -75,7 +78,7 @@ export function Stage({
               exit={{ opacity: 0, height: 0, clipPath: 'inset(0 0 100% 0)' }}
               transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
             >
-              <Lane curve={reference} t={t} cycle={cycle} subject={subject} intervals={intervals} label="Reference" reference />
+              <Lane curve={reference} t={t} waveT={waveT} cycle={cycle} subject={subject} intervals={intervals} label="Reference" reference />
             </motion.div>
           )}
         </AnimatePresence>
@@ -144,6 +147,7 @@ const TickMarks = memo(function TickMarks({ intervals }: { intervals: number }) 
 function Lane({
   curve,
   t,
+  waveT,
   cycle,
   subject,
   intervals,
@@ -152,6 +156,7 @@ function Lane({
 }: {
   curve: Curve
   t: number
+  waveT: number
   cycle: number
   subject: Subject
   intervals: number
@@ -176,7 +181,7 @@ function Lane({
   // The ruler charts the curve itself, which runs forward on every leg, so it
   // never mirrors: the wave always sweeps left → right with time.
   const wave = (pos: number) => {
-    const d = ((pos - t) * travel) / WAVE_WIDTH
+    const d = ((pos - waveT) * travel) / WAVE_WIDTH
     return Math.exp(-(d * d * d * d))
   }
   // Faint ticks at a fixed pixel pitch so they never merge at long durations.
