@@ -36,6 +36,7 @@
   --ease-out: cubic-bezier(0.2, 0.9, 0.1, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-fast: 140ms;
+  --dur-hover: 160ms;
   --dur: 220ms;
 
   /* Shadow geometry (shared by both themes) */
@@ -92,6 +93,7 @@
   --primary-bottom: oklch(0.22 0.012 var(--k-ink-h));
   --primary-border: oklch(0.19 0.012 var(--k-ink-h));
   --primary-text: oklch(0.99 0 0);
+  --primary-hover: linear-gradient(180deg, oklch(1 0 0 / 0.1), oklch(1 0 0 / 0.04));
   --primary-highlight: inset 0 1px 0 oklch(1 0 0 / calc(0.16 * var(--k-highlight)));
   --primary-shadow:
     var(--c1) oklch(0 0 0 / calc(0.18 * var(--k-shadow))),
@@ -142,6 +144,7 @@
   --primary-bottom: oklch(calc(0.98 - 0.1 * var(--k-gradient)) 0.004 var(--k-ink-h));
   --primary-border: oklch(0.82 0.004 var(--k-ink-h));
   --primary-text: oklch(0.2 0.01 var(--k-ink-h));
+  --primary-hover: oklch(1 0 0 / 0.5);
   --primary-highlight: inset 0 1px 0 oklch(1 0 0 / calc(0.9 * var(--k-highlight)));
   --primary-shadow:
     var(--c1) oklch(0 0 0 / calc(0.4 * var(--k-shadow))),
