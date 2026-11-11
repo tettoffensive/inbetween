@@ -11,14 +11,16 @@ import styles from './Stage.module.css'
 
 const TRAVEL = 200
 const SIZE = 52
+const TRAVEL_Y = 64
 /** Faint ticks per drawing interval in the spacing ruler. */
 const FINE = 3
 
 const SUBJECTS: { value: Subject; label: string }[] = [
-  { value: 'slide', label: 'Slide' },
-  { value: 'dot', label: 'Dot' },
+  { value: 'x', label: 'Move X' },
+  { value: 'y', label: 'Move Y' },
   { value: 'scale', label: 'Scale' },
   { value: 'fade', label: 'Fade' },
+  { value: 'rotate', label: 'Rotate' },
 ]
 
 export function Stage({
@@ -150,7 +152,6 @@ function Lane({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const width = useElementWidth(ref)
-  const size = subject === 'dot' ? 18 : SIZE
   // Realistic UI distance, centred in the lane.
   const travel = Math.max(0, Math.min(TRAVEL, width - SIZE))
   const start = Math.max(0, (width - travel - SIZE) / 2)
@@ -158,25 +159,36 @@ function Lane({
   const samples = useMemo(() => sample(curve, intervals), [curve, intervals])
   const active = Math.round(t * intervals)
 
+  // Each subject animates one property from a realistic UI start state.
+  const center = start + travel / 2
   let subjectStyle: React.CSSProperties
-  if (subject === 'slide' || subject === 'dot') {
-    const offset = (SIZE - size) / 2
-    subjectStyle = { transform: `translateX(${start + offset + y * travel}px)` }
-  } else if (subject === 'scale') {
-    subjectStyle = { left: start + travel / 2, transform: `scale(${0.6 + 0.4 * y})` }
-  } else {
-    subjectStyle = { left: start + travel / 2, opacity: Math.min(1, Math.max(0, y)) }
+  switch (subject) {
+    case 'x':
+      subjectStyle = { transform: `translateX(${start + y * travel}px)` }
+      break
+    case 'y': // rises into place
+      subjectStyle = { left: center, transform: `translateY(${(0.5 - y) * TRAVEL_Y}px)` }
+      break
+    case 'scale':
+      subjectStyle = { left: center, transform: `scale(${0.6 + 0.4 * y})` }
+      break
+    case 'fade':
+      subjectStyle = { left: center, opacity: Math.min(1, Math.max(0, y)) }
+      break
+    case 'rotate':
+      subjectStyle = { left: center, transform: `rotate(${y * 180}deg)` }
+      break
   }
 
   return (
     <div className={styles.lane} data-reference={reference || undefined}>
       <span className={styles.laneLabel}>{label}</span>
-      <div ref={ref} className={styles.track}>
-        <div className={styles.rail} style={{ left: start + SIZE / 2, width: travel }} />
+      <div ref={ref} className={styles.track} data-kind={subject}>
+        {subject === 'x' && <div className={styles.rail} style={{ left: start + SIZE / 2, width: travel }} />}
         <div
           className={styles.subject}
-          data-kind={subject === 'dot' ? 'dot' : 'card'}
-          style={{ width: size, height: size, ...subjectStyle }}
+          data-kind={subject}
+          style={{ width: SIZE, height: SIZE, ...subjectStyle }}
         >
         </div>
       </div>

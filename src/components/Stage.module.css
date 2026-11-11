@@ -44,6 +44,7 @@
 .track {
   position: relative;
   height: 84px;
+  transition: height var(--dur) var(--ease-out);
   display: flex;
   align-items: center;
 }
@@ -61,8 +62,7 @@
   will-change: transform, opacity;
 }
 
-.subject[data-kind='card'],
-.subject[data-kind='dot'] {
+.subject {
   /* Solid accent object with the primary-button recipe: light from above,
      a slightly darker edge, a soft cast shadow. */
   background: linear-gradient(
@@ -78,12 +78,25 @@
     0 8px 18px -6px oklch(from var(--accent) l c h / calc(0.45 * var(--k-shadow)));
 }
 
-.subject[data-kind='card'] {
+.subject {
   border-radius: calc(14px * var(--k-radius));
 }
 
-.subject[data-kind='dot'] {
+/* Rotation needs an orientation mark to be readable on a square. */
+.subject[data-kind='rotate']::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
   border-radius: 50%;
+  background: oklch(1 0 0 / 0.85);
+}
+
+.track[data-kind='y'] {
+  height: calc(52px + 64px + 12px);
 }
 
 /* Spacing ruler */

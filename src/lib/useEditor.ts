@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import { PRESETS, sameCurve, type Curve, type TickRate } from './bezier'
 
-export type Subject = 'slide' | 'dot' | 'scale' | 'fade'
+export type Subject = 'x' | 'y' | 'scale' | 'fade' | 'rotate'
 export type Source = 'preset' | 'custom' | 'imported'
 
 type Snapshot = { curve: Curve; source: Source }
@@ -109,7 +109,7 @@ const initial: EditorState = {
   changeId: 0,
   dragging: false,
   duration: 600,
-  subject: 'slide',
+  subject: 'x',
   reference: null,
   tickRate: 24,
 }
