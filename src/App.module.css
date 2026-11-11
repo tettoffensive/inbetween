@@ -81,7 +81,9 @@
 
 .main {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 340px;
+  /* Curve is sized to the window; the preview takes the remaining width. */
+  --plot-size: min(calc(100dvh - 280px), calc(100vw - 780px), 540px);
+  grid-template-columns: 280px auto minmax(360px, 1fr);
   grid-template-rows: auto 1fr;
   grid-template-areas:
     'shape curve preview'
@@ -92,7 +94,8 @@
 
 @media (max-width: 1120px) {
   .main {
-    grid-template-columns: minmax(0, 1fr) 340px;
+    --plot-size: 100%;
+    grid-template-columns: minmax(0, 1fr) 360px;
     grid-template-rows: auto auto auto;
     grid-template-areas:
       'curve preview'

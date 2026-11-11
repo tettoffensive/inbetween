@@ -9,7 +9,8 @@ import { Segmented } from './Segmented'
 import { DurationSlider } from './Controls'
 import styles from './Stage.module.css'
 
-const TRAVEL = 160
+const TRAVEL = 200
+const SIZE = 52
 
 const SUBJECTS: { value: Subject; label: string }[] = [
   { value: 'slide', label: 'Slide' },
@@ -135,17 +136,17 @@ function Lane({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const width = useElementWidth(ref)
-  const size = subject === 'dot' ? 16 : 44
+  const size = subject === 'dot' ? 18 : SIZE
   // Realistic UI distance, centred in the lane.
-  const travel = Math.max(0, Math.min(TRAVEL, width - 44))
-  const start = Math.max(0, (width - travel - 44) / 2)
+  const travel = Math.max(0, Math.min(TRAVEL, width - SIZE))
+  const start = Math.max(0, (width - travel - SIZE) / 2)
   const y = solve(curve, t)
   const samples = useMemo(() => sample(curve, intervals), [curve, intervals])
   const active = Math.round(t * intervals)
 
   let subjectStyle: React.CSSProperties
   if (subject === 'slide' || subject === 'dot') {
-    const offset = (44 - size) / 2
+    const offset = (SIZE - size) / 2
     subjectStyle = { transform: `translateX(${start + offset + y * travel}px)` }
   } else if (subject === 'scale') {
     subjectStyle = { left: start + travel / 2, transform: `scale(${0.6 + 0.4 * y})` }
@@ -157,7 +158,7 @@ function Lane({
     <div className={styles.lane} data-reference={reference || undefined}>
       <span className={styles.laneLabel}>{label}</span>
       <div ref={ref} className={styles.track}>
-        <div className={styles.rail} style={{ left: start + 22, width: travel }} />
+        <div className={styles.rail} style={{ left: start + SIZE / 2, width: travel }} />
         <div
           className={styles.subject}
           data-kind={subject === 'dot' ? 'dot' : 'card'}
@@ -173,7 +174,7 @@ function Lane({
             className={styles.dot}
             data-active={i === active || undefined}
             data-key={i === 0 || i === intervals || undefined}
-            style={{ left: start + 22 + v * travel }}
+            style={{ left: start + SIZE / 2 + v * travel }}
           />
         ))}
       </div>

@@ -39,7 +39,7 @@
 
 .track {
   position: relative;
-  height: 64px;
+  height: 84px;
   display: flex;
   align-items: center;
 }
