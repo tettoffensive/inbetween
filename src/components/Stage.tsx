@@ -184,7 +184,6 @@ function Lane({
     <div className={styles.lane} data-reference={reference || undefined}>
       <span className={styles.laneLabel}>{label}</span>
       <div ref={ref} className={styles.track} data-kind={subject}>
-        {subject === 'x' && <div className={styles.rail} style={{ left: start + SIZE / 2, width: travel }} />}
         <div
           className={styles.subject}
           data-kind={subject}

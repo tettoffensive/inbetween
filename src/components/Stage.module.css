@@ -27,12 +27,12 @@
 
 .lane {
   position: relative;
-  padding: 26px 0 12px;
+  padding: 20px 0 4px;
 }
 
 .laneLabel {
   position: absolute;
-  top: 10px;
+  top: 6px;
   left: 0;
   font-size: 11px;
   font-weight: 550;
@@ -43,18 +43,27 @@
 
 .track {
   position: relative;
-  height: 84px;
-  transition: height var(--dur) var(--ease-out);
+  /* Tall enough for Move Y so switching subjects never changes layout. */
+  height: calc(52px + 64px + 4px);
   display: flex;
+
   align-items: center;
 }
 
-.rail {
+/* Dotted grid: a quiet sense of space without competing with the ticks.
+   On a pseudo-element so the edge fade never touches the subject. */
+.track::before {
+  content: '';
   position: absolute;
-  top: 50%;
-  height: 1px;
-  background: repeating-linear-gradient(90deg, var(--grid) 0 4px, transparent 4px 8px);
+  inset: 0;
+  background-image: radial-gradient(circle, oklch(from var(--text) l c h / 0.14) 1px, transparent 1.25px);
+  background-size: 16px 16px;
+  background-position: center;
+  mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+  pointer-events: none;
 }
+
+
 
 .subject {
   position: absolute;
@@ -95,9 +104,7 @@
   background: oklch(1 0 0 / 0.85);
 }
 
-.track[data-kind='y'] {
-  height: calc(52px + 64px + 12px);
-}
+
 
 /* Spacing ruler */
 .ruler {
