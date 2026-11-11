@@ -166,7 +166,6 @@ function Lane({
           data-kind={subject === 'dot' ? 'dot' : 'card'}
           style={{ width: size, height: size, ...subjectStyle }}
         >
-          {subject !== 'dot' && <span className={styles.glyph} />}
         </div>
       </div>
       {/* Spacing ruler: faint ticks are an even time grid (where linear motion
