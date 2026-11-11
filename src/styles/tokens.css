@@ -2,104 +2,146 @@
   Inbetween — visual tokens
   Rule: light comes from above. Elevation = hairline + top highlight + soft shadow stack.
   One accent (editable / selected). Reference is neutral and dashed.
+
+  Every token derives from the --k-* knobs below. Tune them live with the
+  dev tuner (press \ in dev), then paste the exported block here.
 */
 
 :root {
+  /* ---- Knobs ---- */
+  --k-accent-h: 275;
+  --k-accent-c: 0.11;
+  --k-accent-l: 0.56;
+  --k-neutral-h: 85;
+  --k-neutral-c: 0.004;
+  --k-ink-h: 270;
+  --k-contrast: 1;
+  --k-border: 1;
+  --k-shadow: 1;
+  --k-soft: 1;
+  --k-highlight: 1;
+  --k-gradient: 1;
+  --k-radius: 1;
+
+  /* ---- Fixed ---- */
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', monospace;
 
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  --radius-xs: calc(6px * var(--k-radius));
+  --radius-sm: calc(8px * var(--k-radius));
+  --radius-md: calc(12px * var(--k-radius));
+  --radius-lg: calc(20px * var(--k-radius));
+  --radius-xl: calc(28px * var(--k-radius));
 
   --ease-out: cubic-bezier(0.2, 0.9, 0.1, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-fast: 140ms;
   --dur: 220ms;
+
+  /* Shadow geometry (shared by both themes) */
+  --s1: 0 calc(1px * var(--k-soft)) calc(1px * var(--k-soft));
+  --s2: 0 calc(2px * var(--k-soft)) calc(4px * var(--k-soft)) calc(-1px * var(--k-soft));
+  --s3: 0 calc(8px * var(--k-soft)) calc(16px * var(--k-soft)) calc(-4px * var(--k-soft));
+  --s4: 0 calc(24px * var(--k-soft)) calc(48px * var(--k-soft)) calc(-12px * var(--k-soft));
+  --c1: 0 calc(1px * var(--k-soft)) calc(2px * var(--k-soft));
+  --c2: 0 calc(2px * var(--k-soft)) calc(6px * var(--k-soft)) calc(-2px * var(--k-soft));
 }
 
 :root,
 :root[data-theme='light'] {
   color-scheme: light;
 
-  --bg: oklch(0.958 0.003 85);
-  --surface: oklch(0.988 0.002 85);
-  --surface-hover: oklch(0.975 0.003 85);
-  --well: oklch(0.945 0.004 85);
-  --border: oklch(0.885 0.005 85);
-  --border-soft: oklch(0.92 0.004 85);
-  --grid: oklch(0.9 0.004 85);
+  --bg: oklch(calc(0.988 - 0.03 * var(--k-contrast)) var(--k-neutral-c) var(--k-neutral-h));
+  --surface: oklch(0.988 calc(var(--k-neutral-c) * 0.5) var(--k-neutral-h));
+  --surface-hover: oklch(0.975 calc(var(--k-neutral-c) * 0.75) var(--k-neutral-h));
+  --well: oklch(calc(0.988 - 0.043 * var(--k-contrast)) var(--k-neutral-c) var(--k-neutral-h));
+  --border: oklch(calc(0.988 - 0.103 * var(--k-border)) calc(var(--k-neutral-c) * 1.25) var(--k-neutral-h));
+  --border-soft: oklch(calc(0.988 - 0.068 * var(--k-border)) var(--k-neutral-c) var(--k-neutral-h));
+  --grid: oklch(calc(0.988 - 0.088 * var(--k-border)) var(--k-neutral-c) var(--k-neutral-h));
 
-  --text: oklch(0.23 0.012 270);
-  --text-2: oklch(0.47 0.012 270);
-  --text-3: oklch(0.62 0.01 270);
+  --text: oklch(0.23 0.012 var(--k-ink-h));
+  --text-2: oklch(0.47 0.012 var(--k-ink-h));
+  --text-3: oklch(0.62 0.01 var(--k-ink-h));
 
-  --accent: oklch(0.56 0.11 275);
-  --accent-strong: oklch(0.48 0.12 275);
-  --accent-soft: oklch(0.56 0.11 275 / 0.12);
-  --accent-ring: oklch(0.56 0.11 275 / 0.35);
-  --reference: oklch(0.6 0.01 270);
+  --accent: oklch(var(--k-accent-l) var(--k-accent-c) var(--k-accent-h));
+  --accent-strong: oklch(calc(var(--k-accent-l) - 0.08) calc(var(--k-accent-c) * 1.1) var(--k-accent-h));
+  --accent-soft: oklch(var(--k-accent-l) var(--k-accent-c) var(--k-accent-h) / 0.12);
+  --accent-ring: oklch(var(--k-accent-l) var(--k-accent-c) var(--k-accent-h) / 0.35);
+  --reference: oklch(0.6 0.01 var(--k-ink-h));
   --danger: oklch(0.55 0.15 25);
   --danger-soft: oklch(0.55 0.15 25 / 0.08);
 
-  --highlight: inset 0 1px 0 oklch(1 0 0 / 0.9);
+  --shade: 0.2 0.02 var(--k-ink-h);
+  --highlight: inset 0 1px 0 oklch(1 0 0 / calc(0.9 * var(--k-highlight)));
   --shadow-raised:
-    var(--highlight), 0 1px 1px oklch(0.2 0.02 270 / 0.03), 0 2px 4px -1px oklch(0.2 0.02 270 / 0.04),
-    0 8px 16px -4px oklch(0.2 0.02 270 / 0.05), 0 24px 48px -12px oklch(0.2 0.02 270 / 0.07);
+    var(--highlight), var(--s1) oklch(var(--shade) / calc(0.03 * var(--k-shadow))),
+    var(--s2) oklch(var(--shade) / calc(0.04 * var(--k-shadow))),
+    var(--s3) oklch(var(--shade) / calc(0.05 * var(--k-shadow))),
+    var(--s4) oklch(var(--shade) / calc(0.07 * var(--k-shadow)));
   --shadow-control:
-    var(--highlight), 0 1px 2px oklch(0.2 0.02 270 / 0.06), 0 2px 6px -2px oklch(0.2 0.02 270 / 0.06);
-  --shadow-well: inset 0 1px 2px oklch(0.2 0.02 270 / 0.05);
+    var(--highlight), var(--c1) oklch(var(--shade) / calc(0.06 * var(--k-shadow))),
+    var(--c2) oklch(var(--shade) / calc(0.06 * var(--k-shadow)));
+  --shadow-well: inset 0 1px 2px oklch(var(--shade) / calc(0.05 * var(--k-shadow)));
 
-  --primary-top: oklch(0.37 0.012 270);
-  --primary-bottom: oklch(0.22 0.012 270);
-  --primary-border: oklch(0.19 0.012 270);
+  --primary-top: oklch(calc(0.22 + 0.15 * var(--k-gradient)) 0.012 var(--k-ink-h));
+  --primary-bottom: oklch(0.22 0.012 var(--k-ink-h));
+  --primary-border: oklch(0.19 0.012 var(--k-ink-h));
   --primary-text: oklch(0.99 0 0);
-  --primary-highlight: inset 0 1px 0 oklch(1 0 0 / 0.16);
-  --primary-shadow: 0 1px 2px oklch(0 0 0 / 0.18), 0 4px 10px -3px oklch(0 0 0 / 0.2);
+  --primary-highlight: inset 0 1px 0 oklch(1 0 0 / calc(0.16 * var(--k-highlight)));
+  --primary-shadow:
+    var(--c1) oklch(0 0 0 / calc(0.18 * var(--k-shadow))),
+    0 calc(4px * var(--k-soft)) calc(10px * var(--k-soft)) calc(-3px * var(--k-soft))
+      oklch(0 0 0 / calc(0.2 * var(--k-shadow)));
 
-  --subject-top: oklch(0.995 0.002 85);
-  --subject-bottom: oklch(0.955 0.004 85);
+  --subject-top: oklch(0.995 calc(var(--k-neutral-c) * 0.5) var(--k-neutral-h));
+  --subject-bottom: oklch(calc(0.995 - 0.04 * var(--k-gradient)) var(--k-neutral-c) var(--k-neutral-h));
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: oklch(0.165 0.005 270);
-  --surface: oklch(0.205 0.006 270);
-  --surface-hover: oklch(0.23 0.006 270);
-  --well: oklch(0.175 0.005 270);
-  --border: oklch(1 0 0 / 0.09);
-  --border-soft: oklch(1 0 0 / 0.06);
-  --grid: oklch(1 0 0 / 0.06);
+  --bg: oklch(calc(0.205 - 0.04 * var(--k-contrast)) calc(var(--k-neutral-c) * 1.25) var(--k-neutral-h));
+  --surface: oklch(0.205 calc(var(--k-neutral-c) * 1.5) var(--k-neutral-h));
+  --surface-hover: oklch(0.23 calc(var(--k-neutral-c) * 1.5) var(--k-neutral-h));
+  --well: oklch(calc(0.205 - 0.03 * var(--k-contrast)) calc(var(--k-neutral-c) * 1.25) var(--k-neutral-h));
+  --border: oklch(1 0 0 / calc(0.09 * var(--k-border)));
+  --border-soft: oklch(1 0 0 / calc(0.06 * var(--k-border)));
+  --grid: oklch(1 0 0 / calc(0.06 * var(--k-border)));
 
-  --text: oklch(0.95 0.004 270);
-  --text-2: oklch(0.72 0.008 270);
-  --text-3: oklch(0.55 0.008 270);
+  --text: oklch(0.95 0.004 var(--k-ink-h));
+  --text-2: oklch(0.72 0.008 var(--k-ink-h));
+  --text-3: oklch(0.55 0.008 var(--k-ink-h));
 
-  --accent: oklch(0.72 0.1 275);
-  --accent-strong: oklch(0.8 0.09 275);
-  --accent-soft: oklch(0.72 0.1 275 / 0.16);
-  --accent-ring: oklch(0.72 0.1 275 / 0.4);
-  --reference: oklch(0.6 0.01 270);
+  --accent: oklch(calc(var(--k-accent-l) + 0.16) calc(var(--k-accent-c) * 0.9) var(--k-accent-h));
+  --accent-strong: oklch(calc(var(--k-accent-l) + 0.24) calc(var(--k-accent-c) * 0.8) var(--k-accent-h));
+  --accent-soft: oklch(calc(var(--k-accent-l) + 0.16) calc(var(--k-accent-c) * 0.9) var(--k-accent-h) / 0.16);
+  --accent-ring: oklch(calc(var(--k-accent-l) + 0.16) calc(var(--k-accent-c) * 0.9) var(--k-accent-h) / 0.4);
+  --reference: oklch(0.6 0.01 var(--k-ink-h));
   --danger: oklch(0.72 0.13 25);
   --danger-soft: oklch(0.72 0.13 25 / 0.1);
 
-  --highlight: inset 0 1px 0 oklch(1 0 0 / 0.06);
+  --highlight: inset 0 1px 0 oklch(1 0 0 / calc(0.06 * var(--k-highlight)));
   --shadow-raised:
-    var(--highlight), 0 1px 1px oklch(0 0 0 / 0.2), 0 4px 8px -2px oklch(0 0 0 / 0.25),
-    0 16px 32px -8px oklch(0 0 0 / 0.35);
-  --shadow-control: var(--highlight), 0 1px 2px oklch(0 0 0 / 0.3), 0 2px 6px -2px oklch(0 0 0 / 0.3);
-  --shadow-well: inset 0 1px 2px oklch(0 0 0 / 0.25);
+    var(--highlight), var(--s1) oklch(0 0 0 / calc(0.2 * var(--k-shadow))),
+    0 calc(4px * var(--k-soft)) calc(8px * var(--k-soft)) calc(-2px * var(--k-soft))
+      oklch(0 0 0 / calc(0.25 * var(--k-shadow))),
+    0 calc(16px * var(--k-soft)) calc(32px * var(--k-soft)) calc(-8px * var(--k-soft))
+      oklch(0 0 0 / calc(0.35 * var(--k-shadow)));
+  --shadow-control:
+    var(--highlight), var(--c1) oklch(0 0 0 / calc(0.3 * var(--k-shadow))),
+    var(--c2) oklch(0 0 0 / calc(0.3 * var(--k-shadow)));
+  --shadow-well: inset 0 1px 2px oklch(0 0 0 / calc(0.25 * var(--k-shadow)));
 
-  --primary-top: oklch(0.98 0.002 270);
-  --primary-bottom: oklch(0.88 0.004 270);
-  --primary-border: oklch(0.82 0.004 270);
-  --primary-text: oklch(0.2 0.01 270);
-  --primary-highlight: inset 0 1px 0 oklch(1 0 0 / 0.9);
-  --primary-shadow: 0 1px 2px oklch(0 0 0 / 0.4), 0 4px 10px -3px oklch(0 0 0 / 0.4);
+  --primary-top: oklch(0.98 0.002 var(--k-ink-h));
+  --primary-bottom: oklch(calc(0.98 - 0.1 * var(--k-gradient)) 0.004 var(--k-ink-h));
+  --primary-border: oklch(0.82 0.004 var(--k-ink-h));
+  --primary-text: oklch(0.2 0.01 var(--k-ink-h));
+  --primary-highlight: inset 0 1px 0 oklch(1 0 0 / calc(0.9 * var(--k-highlight)));
+  --primary-shadow:
+    var(--c1) oklch(0 0 0 / calc(0.4 * var(--k-shadow))),
+    0 calc(4px * var(--k-soft)) calc(10px * var(--k-soft)) calc(-3px * var(--k-soft))
+      oklch(0 0 0 / calc(0.4 * var(--k-shadow)));
 
-  --subject-top: oklch(0.3 0.006 270);
-  --subject-bottom: oklch(0.25 0.006 270);
+  --subject-top: oklch(0.3 calc(var(--k-neutral-c) * 1.5) var(--k-neutral-h));
+  --subject-bottom: oklch(calc(0.3 - 0.05 * var(--k-gradient)) calc(var(--k-neutral-c) * 1.5) var(--k-neutral-h));
 }

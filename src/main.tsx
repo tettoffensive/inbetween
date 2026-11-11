@@ -7,12 +7,14 @@ import '@fontsource-variable/jetbrains-mono/wght.css'
 import './styles/tokens.css'
 import './styles/base.css'
 import App from './App.tsx'
+import { Tuner } from './dev/Tuner.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MotionConfig reducedMotion="user">
       <Tooltip.Provider delayDuration={400}>
         <App />
+        {import.meta.env.DEV && <Tuner />}
       </Tooltip.Provider>
     </MotionConfig>
   </StrictMode>,
