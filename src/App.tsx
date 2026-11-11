@@ -15,7 +15,7 @@ export default function App() {
   const [theme, setTheme] = useTheme()
   const { curve, source } = state.present
   const shown = useTweenedCurve(curve, state.dragging)
-  const playback = usePlayback(state.duration, state.subject === 'rotate' ? 'continue' : 'alternate')
+  const playback = usePlayback(state.duration)
   const { setPlaying } = playback
 
   useEffect(() => {

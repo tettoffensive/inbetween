@@ -38,34 +38,25 @@ export function useTweenedCurve(target: Curve, instant: boolean): Curve {
 const HOLD_MS = 500
 
 /**
- * How the preview loops:
- * - 'alternate': forward, hold, backward, hold (CSS animation-direction: alternate).
- *   Nothing ever snaps back.
- * - 'continue': forward, hold, forward again from where it left off. `cycle`
- *   counts completed runs so cumulative properties (rotation) keep going.
+ * Looping playback clock. Time always runs forward: t goes 0 → 1, holds,
+ * then the next run starts. `cycle` counts completed runs; the preview uses
+ * it to alternate enter/exit (odd runs play the opposite change, still
+ * along the curve) and to accumulate rotation.
  */
-export type LoopMode = 'alternate' | 'continue'
-
-/** Looping playback clock. t is elapsed fraction of the duration (0–1). */
-export function usePlayback(duration: number, mode: LoopMode) {
+export function usePlayback(duration: number) {
   const reduced = useReducedMotion()
   const [t, setT] = useState(0)
   const [cycle, setCycle] = useState(0)
   const [playing, setPlaying] = useState(!reduced)
   const tRef = useRef(0)
-  const dirRef = useRef<1 | -1>(1)
   const cycleRef = useRef(0)
-
-  // Switching to 'continue' always runs forward.
-  useEffect(() => {
-    if (mode === 'continue') dirRef.current = 1
-  }, [mode])
 
   useEffect(() => {
     if (!playing) return
     let raf = 0
     let last = performance.now()
-    let hold = 0
+    // Resuming exactly at the end: hold there first.
+    let hold = tRef.current >= 1 ? HOLD_MS : 0
     const tick = (now: number) => {
       // Cap the step so a backgrounded tab resumes smoothly instead of skipping.
       const dt = Math.min(now - last, 50)
@@ -73,31 +64,20 @@ export function usePlayback(duration: number, mode: LoopMode) {
       if (hold > 0) {
         hold -= dt
         if (hold <= 0) {
-          // End of a pause: turn around, or start the next forward run.
-          if (mode === 'alternate') {
-            dirRef.current = tRef.current >= 1 ? -1 : 1
-          } else if (tRef.current >= 1) {
-            tRef.current = 0
-            cycleRef.current += 1
-            setCycle(cycleRef.current)
-          }
+          tRef.current = 0
+          cycleRef.current += 1
+          setCycle(cycleRef.current)
         }
       } else {
-        let next = tRef.current + (dirRef.current * dt) / duration
-        if (next >= 1 || next <= 0) {
-          next = next >= 1 ? 1 : 0
-          hold = HOLD_MS
-        }
-        tRef.current = next
+        tRef.current = Math.min(1, tRef.current + dt / duration)
+        if (tRef.current >= 1) hold = HOLD_MS
       }
       setT(tRef.current)
       raf = requestAnimationFrame(tick)
     }
-    // Resuming exactly at an end: pause there first, then continue.
-    if (tRef.current >= 1 || (tRef.current <= 0 && dirRef.current === -1)) hold = HOLD_MS
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [playing, duration, mode])
+  }, [playing, duration])
 
   const scrub = (value: number) => {
     setPlaying(false)

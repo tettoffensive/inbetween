@@ -163,14 +163,20 @@ function Lane({
   // Realistic UI distance, centred in the lane.
   const travel = Math.max(0, Math.min(TRAVEL, width - SIZE))
   const start = Math.max(0, (width - travel - SIZE) / 2)
-  const y = solve(curve, t)
+  const p = solve(curve, t)
+  // Odd runs play the opposite change (exit), still along the curve.
+  // Rotation instead keeps turning forward.
+  const back = subject !== 'rotate' && cycle % 2 === 1
+  const y = back ? 1 - p : p
+  // Physical position along the ruler (0 = left) for a value on the curve.
+  const at = (u: number) => (back ? 1 - u : u)
   const samples = useMemo(() => sample(curve, intervals), [curve, intervals])
   // One wave crest sweeping the ruler at a steady rate (driven by time), so
   // it finishes exactly when the motion does. Every tick swells by its
   // distance from the crest. Super-Gaussian for a sharp fall-off.
   const x0 = start + SIZE / 2
-  const wave = (u: number) => {
-    const d = ((u - t) * travel) / WAVE_WIDTH
+  const wave = (pos: number) => {
+    const d = ((pos - at(t)) * travel) / WAVE_WIDTH
     return Math.exp(-(d * d * d * d))
   }
   // Faint ticks at a fixed pixel pitch so they never merge at long durations.
@@ -193,7 +199,7 @@ function Lane({
       subjectStyle = { left: center, opacity: Math.min(1, Math.max(0, y)) }
       break
     case 'rotate':
-      subjectStyle = { left: center, transform: `rotate(${(cycle + y) * 180}deg)` }
+      subjectStyle = { left: center, transform: `rotate(${(cycle + p) * 180}deg)` }
       break
   }
 
@@ -227,7 +233,7 @@ function Lane({
           <span
             key={i}
             className={styles.mark}
-            style={{ left: x0 + v * travel, transform: `scaleY(${1 + 0.55 * wave(v)})` }}
+            style={{ left: x0 + at(v) * travel, transform: `scaleY(${1 + 0.55 * wave(at(v))})` }}
           />
         ))}
       </div>
