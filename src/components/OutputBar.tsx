@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type Dispatch } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type Dispatch, type KeyboardEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { CheckIcon, ClipboardIcon, CopyIcon } from '@radix-ui/react-icons'
 import { format, parse, parseDuration, type Curve } from '../lib/bezier'
 import type { Action } from '../lib/useEditor'
+import { nudgeNumberAt } from '../lib/nudgeNumber'
 import styles from './OutputBar.module.css'
 
 /**
@@ -30,6 +31,32 @@ export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatc
     dispatch({ type: 'commit', curve: r.curve, source: 'imported' })
     setEditing(false)
     return true
+  }
+
+  // Arrow-key nudging: restore the caret after React rewrites the value.
+  const pendingCaret = useRef<number | null>(null)
+  useLayoutEffect(() => {
+    if (pendingCaret.current === null || !inputRef.current) return
+    inputRef.current.setSelectionRange(pendingCaret.current, pendingCaret.current)
+    pendingCaret.current = null
+  }, [draft])
+
+  const onArrow = (e: KeyboardEvent<HTMLInputElement>) => {
+    const el = e.currentTarget
+    const caret = el.selectionStart ?? 0
+    const dir = e.key === 'ArrowUp' ? 1 : -1
+    const r = nudgeNumberAt(draft, caret, dir, e.shiftKey ? 10 : 1)
+    if (!r) return
+    e.preventDefault()
+    const parsed = parse(r.text)
+    // Ignore nudges that would make the easing invalid (e.g. x outside 0–1).
+    if (!parsed.ok) return
+    // One undo step per press-and-hold run.
+    if (!e.repeat) dispatch({ type: 'checkpoint' })
+    dispatch({ type: 'update', curve: parsed.curve, source: 'custom' })
+    setError(null)
+    pendingCaret.current = r.caret
+    setDraft(r.text)
   }
 
   /** Open the field: prefilled with the current CSS (click) or empty (Paste). */
@@ -121,6 +148,7 @@ export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatc
                 apply(text)
               }}
               onKeyDown={(e) => {
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown') onArrow(e)
                 if (e.key === 'Escape') cancel()
               }}
               onBlur={() => {
@@ -129,7 +157,7 @@ export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatc
             />
           </form>
         ) : (
-          <button className={styles.code} onClick={() => startEditing()} title="Click or paste anywhere to import CSS">
+          <button className={styles.code} onClick={() => startEditing()} title="Click to edit · ↑↓ nudges the number at the cursor · paste anywhere to import">
             <span className={styles.fn}>{css}</span>
           </button>
         )}
