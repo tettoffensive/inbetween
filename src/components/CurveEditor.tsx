@@ -134,8 +134,18 @@ export function CurveEditor({
 
             <path d={pathFor(shown)} className={styles.curve} />
 
+            {/* Spacing projected onto the progress axis: each frame's height.
+                Equal-time ticks below, resulting spacing on the left. */}
             {samples.map((v, i) => (
-              <circle key={i} cx={i / intervals} cy={sy(v)} r={0.009} className={styles.sample} />
+              <line
+                key={i}
+                x1={-0.05}
+                x2={-0.012}
+                y1={sy(v)}
+                y2={sy(v)}
+                className={styles.spacing}
+                data-active={i === Math.round(t * intervals) || undefined}
+              />
             ))}
 
             {/* playhead */}

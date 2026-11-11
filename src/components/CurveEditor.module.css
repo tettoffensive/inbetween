@@ -101,10 +101,16 @@
   stroke-linecap: round;
 }
 
-.sample {
-  fill: var(--surface);
-  stroke: var(--accent);
+.spacing {
+  stroke: var(--text);
+  stroke-opacity: 0.7;
   stroke-width: 1.25;
+}
+
+.spacing[data-active] {
+  stroke: var(--accent);
+  stroke-opacity: 1;
+  stroke-width: 2;
 }
 
 .playhead {
