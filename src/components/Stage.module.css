@@ -141,11 +141,13 @@
   background: var(--reference);
 }
 
-/* Playback speed, under the ruler */
+/* Playback speed, under Duration */
 .speedRow {
   display: flex;
-  justify-content: center;
-  padding: 2px 16px 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px 8px;
 }
 
 /* Transport */

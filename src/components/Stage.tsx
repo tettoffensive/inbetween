@@ -90,17 +90,6 @@ export function Stage({
         </AnimatePresence>
       </div>
 
-      <div className={styles.speedRow}>
-        <Segmented
-          id="speed"
-          label="Playback speed"
-          size="sm"
-          value={String(speed)}
-          onChange={(v) => onSpeed(Number(v) as Speed)}
-          options={SPEEDS.map((s) => ({ value: String(s), label: `${s}×`, title: `Play at ${s}× speed` }))}
-        />
-      </div>
-
       <footer className={styles.transport}>
         <button
           className={`btn btn-primary btn-icon ${styles.play}`}
@@ -135,6 +124,17 @@ export function Stage({
         <span className={styles.durLabel}>Duration</span>
         <DurationSlider value={duration} onChange={onDuration} />
         <span className={`${styles.durValue} tnum`}>{duration}ms</span>
+      </div>
+      <div className={styles.speedRow}>
+        <span className={styles.durLabel}>Playback speed</span>
+        <Segmented
+          id="speed"
+          label="Playback speed"
+          size="sm"
+          value={String(speed)}
+          onChange={(v) => onSpeed(Number(v) as Speed)}
+          options={SPEEDS.map((s) => ({ value: String(s), label: `${s}×`, title: `Play at ${s}× speed` }))}
+        />
       </div>
       <div className={styles.meta}>
         <p className="tnum">Ticks every 1/{tickRate} s · plays at full refresh rate</p>
