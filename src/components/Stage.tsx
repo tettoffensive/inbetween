@@ -120,13 +120,15 @@ export function Stage({
         </span>
       </footer>
 
-      <div className={styles.duration}>
-        <span className={styles.durLabel}>Duration</span>
-        <DurationSlider value={duration} onChange={onDuration} />
-        <span className={`${styles.durValue} tnum`}>{duration}ms</span>
-      </div>
-      <div className={styles.speedRow}>
-        <span className={styles.durLabel}>Playback speed</span>
+      {/* Settings: one label column, controls right-aligned to the same edge. */}
+      <div className={styles.settings}>
+        <span className={styles.label}>Duration</span>
+        <div className={styles.durationControl}>
+          <DurationSlider value={duration} onChange={onDuration} />
+          <span className={`${styles.durValue} tnum`}>{duration}ms</span>
+        </div>
+
+        <span className={styles.label}>Playback speed</span>
         <Segmented
           id="speed"
           label="Playback speed"
@@ -135,12 +137,13 @@ export function Stage({
           onChange={(v) => onSpeed(Number(v) as Speed)}
           options={SPEEDS.map((s) => ({ value: String(s), label: `${s}x`, title: `Play at ${s}x speed` }))}
         />
-      </div>
-      <div className={styles.meta}>
-        <p className="tnum">Ticks every 1/{tickRate} s · plays at full refresh rate</p>
+
+        <span className={styles.label} title="Tick marks per second. Playback always runs at full refresh rate.">
+          Frames
+        </span>
         <Segmented
           id="tickrate"
-          label="Ticks per second"
+          label="Frames per second for tick marks"
           size="sm"
           value={String(tickRate)}
           onChange={(v) => onTickRate(Number(v) as TickRate)}
