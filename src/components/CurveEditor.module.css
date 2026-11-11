@@ -70,11 +70,6 @@
   stroke-dasharray: 3 4;
 }
 
-.tick {
-  stroke: var(--text-3);
-  stroke-opacity: 0.5;
-  stroke-width: 1;
-}
 
 .reference {
   fill: none;

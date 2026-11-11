@@ -6,7 +6,7 @@ import styles from './CurveEditor.module.css'
 // Plot space: x in [0,1] time, y in [-0.2, 1.2] progress. Square viewBox with margin.
 const PAD = 0.2
 const SPAN = 1 + PAD * 2
-const DOT_STEP = 1 / 8
+const DOT_STEP = 1 / 16
 const sx = (x: number) => x
 const sy = (y: number) => 1 - y
 const pct = (v: number) => `${((v + PAD) / SPAN) * 100}%`
@@ -105,20 +105,30 @@ export function CurveEditor({
       <div className={styles.plotWrap}>
         <div className={`well ${styles.plot}`} ref={boxRef}>
           <svg viewBox={`${-PAD} ${-PAD} ${SPAN} ${SPAN}`} className={styles.svg} aria-hidden>
-            {/* Dot grid in plot units: one dot every 1/8, landing on the 0 and 1 edges. */}
+            {/* Dot grid in plot units: one dot every 1/16, landing on the 0 and 1
+                edges, fading out toward the edges of the plot. */}
             <defs>
-              <pattern id={dotsId} width={DOT_STEP} height={DOT_STEP} patternUnits="userSpaceOnUse" x={-DOT_STEP / 2} y={-DOT_STEP / 2}>
-                <circle cx={DOT_STEP / 2} cy={DOT_STEP / 2} r={0.0035} className={styles.dot} />
+              <pattern id={`${dotsId}-p`} width={DOT_STEP} height={DOT_STEP} patternUnits="userSpaceOnUse" x={-DOT_STEP / 2} y={-DOT_STEP / 2}>
+                <circle cx={DOT_STEP / 2} cy={DOT_STEP / 2} r={0.0028} className={styles.dot} />
               </pattern>
+              <radialGradient id={`${dotsId}-g`} cx="50%" cy="50%" r="60%">
+                <stop offset="45%" stopColor="#fff" />
+                <stop offset="100%" stopColor="#fff" stopOpacity={0} />
+              </radialGradient>
+              <mask id={`${dotsId}-m`}>
+                <rect x={-PAD} y={-PAD} width={SPAN} height={SPAN} fill={`url(#${dotsId}-g)`} />
+              </mask>
             </defs>
             <rect x={0} y={0} width={1} height={1} className={styles.frame} />
-            <rect x={-PAD} y={-PAD} width={SPAN} height={SPAN} fill={`url(#${dotsId})`} />
+            <rect
+              x={-PAD}
+              y={-PAD}
+              width={SPAN}
+              height={SPAN}
+              fill={`url(#${dotsId}-p)`}
+              mask={`url(#${dotsId}-m)`}
+            />
             <line x1={0} y1={1} x2={1} y2={0} className={styles.diagonal} />
-
-            {/* equal-time verticals: frame marks along the time axis */}
-            {samples.map((_, i) => (
-              <line key={i} x1={i / intervals} x2={i / intervals} y1={1} y2={1.03} className={styles.tick} />
-            ))}
 
             {reference && <path d={pathFor(reference)} className={styles.reference} />}
 
