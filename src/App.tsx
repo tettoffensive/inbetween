@@ -24,13 +24,16 @@ export default function App() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault()
         dispatch({ type: e.shiftKey ? 'redo' : 'undo' })
-      } else if (e.key === ' ' && !target.closest('button, [role="slider"], [role="radio"]')) {
+      } else if (e.key === ' ') {
+        // Global play/pause. Captured before focused buttons/toggles see it,
+        // so it never double-fires; Enter still activates focused controls.
         e.preventDefault()
-        setPlaying((p) => !p)
+        e.stopPropagation()
+        if (!e.repeat) setPlaying((p) => !p)
       }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('keydown', onKey, { capture: true })
+    return () => window.removeEventListener('keydown', onKey, { capture: true })
   }, [dispatch, setPlaying])
 
   const name = presetName(curve)
