@@ -14,8 +14,8 @@ const SIZE = 52
 const TRAVEL_Y = 64
 /** Faint ticks per drawing interval in the spacing ruler. */
 const FINE = 3
-/** Width of the wave that travels through the ruler, in px. */
-const WAVE_SIGMA = 14
+/** Half-width of the wave crest travelling through the ruler, in px. */
+const WAVE_WIDTH = 6
 
 const SUBJECTS: { value: Subject; label: string }[] = [
   { value: 'x', label: 'Move X' },
@@ -164,11 +164,13 @@ function Lane({
   const start = Math.max(0, (width - travel - SIZE) / 2)
   const y = solve(curve, t)
   const samples = useMemo(() => sample(curve, intervals), [curve, intervals])
-  // Gaussian bump centred on the subject's progress.
+  // Wave driven by time, not position: it sweeps the even (time) grid at a
+  // steady rate and finishes exactly when the motion does. Super-Gaussian
+  // (4th power) for a tight crest with a sharp fall-off.
   const x0 = start + SIZE / 2
-  const wave = (u: number) => {
-    const d = (u - y) * travel
-    return Math.exp(-(d * d) / (2 * WAVE_SIGMA * WAVE_SIGMA))
+  const wave = (timeAt: number) => {
+    const d = ((timeAt - t) * travel) / WAVE_WIDTH
+    return Math.exp(-(d * d * d * d))
   }
 
   // Each subject animates one property from a realistic UI start state.
@@ -214,7 +216,7 @@ function Lane({
             <span
               key={`f${i}`}
               className={styles.fine}
-              style={{ left: x0 + u * travel, transform: `scaleY(${1 + 1.1 * g})`, opacity: 0.13 + 0.42 * g }}
+              style={{ left: x0 + u * travel, transform: `scaleY(${1 + 1.1 * g})`, opacity: 0.13 + 0.22 * g }}
             />
           )
         })}
@@ -222,7 +224,8 @@ function Lane({
           <span
             key={i}
             className={styles.mark}
-            style={{ left: x0 + v * travel, transform: `scaleY(${1 + 0.55 * wave(v)})` }}
+            // Each drawing pulses at its own moment (time i / intervals).
+            style={{ left: x0 + v * travel, transform: `scaleY(${1 + 0.55 * wave(i / intervals)})` }}
           />
         ))}
       </div>

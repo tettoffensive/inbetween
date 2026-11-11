@@ -112,6 +112,8 @@ export function useElementWidth<T extends HTMLElement>(ref: RefObject<T | null>)
   useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
+    // Measure now so the first paint is right; observe for later changes.
+    setWidth(el.getBoundingClientRect().width)
     const ro = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
     ro.observe(el)
     return () => ro.disconnect()
