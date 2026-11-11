@@ -10,8 +10,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  height: 48px;
-  margin-bottom: 12px;
+  height: 44px;
+  margin-bottom: 8px;
 }
 
 .brand {
@@ -90,6 +90,16 @@
     'shape curve code';
   gap: 16px;
   align-items: start;
+}
+
+/* Short screens: CSS panel joins the shape column so the preview (with a
+   pinned reference) gets the full right column height. */
+@media (min-width: 1121px) and (max-height: 960px) {
+  .main {
+    grid-template-areas:
+      'shape curve preview'
+      'code curve preview';
+  }
 }
 
 @media (max-width: 1120px) {

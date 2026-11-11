@@ -19,7 +19,7 @@ export const ShapePanel = memo(function ShapePanel({
 
   return (
     <aside className={`card ${styles.panel}`} aria-label="Shape" style={{ gridArea: 'shape' }}>
-      <Section title="Feel" hint="Nudges reshape whatever curve is current.">
+      <Section title="Feel" info="Nudges reshape whatever curve is current, including imported ones.">
         <NudgeRow label="Start" curve={curve} dispatch={dispatch} less="start-gentler" more="start-snappier" lessLabel="Gentler" moreLabel="Snappier" />
         <NudgeRow label="Landing" curve={curve} dispatch={dispatch} less="land-softer" more="land-firmer" lessLabel="Softer" moreLabel="Firmer" />
       </Section>
@@ -53,7 +53,6 @@ export const ShapePanel = memo(function ShapePanel({
           {reference ? <DrawingPinFilledIcon /> : <DrawingPinIcon />}
           {reference ? 'Clear reference' : 'Pin as reference'}
         </button>
-        {reference && <p className={`${styles.refValue} tnum`}>{format(reference)}</p>}
       </Section>
     </aside>
   )
@@ -97,18 +96,23 @@ export function DurationSlider({ value, onChange }: { value: number; onChange: (
 function Section({
   title,
   hint,
+  info,
   aside,
   children,
 }: {
   title: string
   hint?: string
+  /** Secondary explanation, shown on hover of the title. */
+  info?: string
   aside?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
     <section className={styles.section}>
       <header className={styles.sectionHead}>
-        <h3 className="eyebrow">{title}</h3>
+        <h3 className="eyebrow" title={info}>
+          {title}
+        </h3>
         {aside && <span className={styles.aside}>{aside}</span>}
       </header>
       {children}
