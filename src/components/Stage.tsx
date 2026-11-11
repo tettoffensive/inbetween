@@ -13,7 +13,8 @@ const TRAVEL = 200
 const SIZE = 52
 const TRAVEL_Y = 64
 /** Faint ticks per drawing interval in the spacing ruler. */
-const FINE = 3
+/** Spacing between faint ruler ticks, in px. */
+const FINE_PITCH = 5
 /** Half-width of the wave crest travelling through the ruler, in px. */
 const WAVE_WIDTH = 6
 
@@ -164,14 +165,16 @@ function Lane({
   const start = Math.max(0, (width - travel - SIZE) / 2)
   const y = solve(curve, t)
   const samples = useMemo(() => sample(curve, intervals), [curve, intervals])
-  // Wave driven by time, not position: it sweeps the even (time) grid at a
-  // steady rate and finishes exactly when the motion does. Super-Gaussian
-  // (4th power) for a tight crest with a sharp fall-off.
+  // One wave crest sweeping the ruler at a steady rate (driven by time), so
+  // it finishes exactly when the motion does. Every tick swells by its
+  // distance from the crest. Super-Gaussian for a sharp fall-off.
   const x0 = start + SIZE / 2
-  const wave = (timeAt: number) => {
-    const d = ((timeAt - t) * travel) / WAVE_WIDTH
+  const wave = (u: number) => {
+    const d = ((u - t) * travel) / WAVE_WIDTH
     return Math.exp(-(d * d * d * d))
   }
+  // Faint ticks at a fixed pixel pitch so they never merge at long durations.
+  const fineCount = Math.max(2, Math.round(travel / FINE_PITCH))
 
   // Each subject animates one property from a realistic UI start state.
   const center = start + travel / 2
@@ -206,11 +209,11 @@ function Lane({
         </div>
       </div>
       {/* Spacing ruler: faint ticks are an even time grid (where linear motion
-          would be), bold ticks are where each drawing actually lands. A wave
-          swells the ticks under the subject as it passes through. */}
+          would be), bold ticks are where each drawing actually lands. A single
+          wave sweeps through both at a steady rate. */}
       <div className={styles.ruler} aria-hidden>
-        {Array.from({ length: intervals * FINE + 1 }, (_, i) => {
-          const u = i / (intervals * FINE)
+        {Array.from({ length: fineCount + 1 }, (_, i) => {
+          const u = i / fineCount
           const g = wave(u)
           return (
             <span
@@ -224,8 +227,7 @@ function Lane({
           <span
             key={i}
             className={styles.mark}
-            // Each drawing pulses at its own moment (time i / intervals).
-            style={{ left: x0 + v * travel, transform: `scaleY(${1 + 0.55 * wave(i / intervals)})` }}
+            style={{ left: x0 + v * travel, transform: `scaleY(${1 + 0.55 * wave(v)})` }}
           />
         ))}
       </div>
