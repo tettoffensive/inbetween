@@ -169,8 +169,6 @@ export function CurveEditor({
             {...handleProps(1)}
           />
 
-          <span className={`${styles.axis} ${styles.axisX}`}>time →</span>
-          <span className={`${styles.axis} ${styles.axisY}`}>progress →</span>
         </div>
       </div>
     </section>

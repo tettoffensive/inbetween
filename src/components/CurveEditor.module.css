@@ -166,23 +166,3 @@
   box-shadow: var(--shadow-control), 0 0 0 6px var(--accent-soft);
 }
 
-.axis {
-  position: absolute;
-  font-size: 10.5px;
-  letter-spacing: 0.04em;
-  color: var(--text-3);
-  pointer-events: none;
-}
-
-.axisX {
-  right: calc(100% / 7);
-  bottom: 6px;
-  transform: translateX(50%);
-}
-
-.axisY {
-  left: 6px;
-  bottom: calc(100% / 7);
-  transform-origin: left bottom;
-  transform: rotate(-90deg) translate(0, 100%);
-}
