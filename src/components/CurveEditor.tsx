@@ -109,10 +109,10 @@ export function CurveEditor({
                 edges, fading out toward the edges of the plot. */}
             <defs>
               <pattern id={`${dotsId}-p`} width={DOT_STEP} height={DOT_STEP} patternUnits="userSpaceOnUse" x={-DOT_STEP / 2} y={-DOT_STEP / 2}>
-                <circle cx={DOT_STEP / 2} cy={DOT_STEP / 2} r={0.0028} className={styles.dot} />
+                <circle cx={DOT_STEP / 2} cy={DOT_STEP / 2} r={0.0034} className={styles.dot} />
               </pattern>
               <radialGradient id={`${dotsId}-g`} cx="50%" cy="50%" r="60%">
-                <stop offset="45%" stopColor="#fff" />
+                <stop offset="55%" stopColor="#fff" />
                 <stop offset="100%" stopColor="#fff" stopOpacity={0} />
               </radialGradient>
               <mask id={`${dotsId}-m`}>

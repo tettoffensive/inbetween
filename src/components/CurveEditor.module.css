@@ -52,8 +52,7 @@
 }
 
 .dot {
-  fill: var(--text);
-  fill-opacity: 0.16;
+  fill: var(--dot-grid);
 }
 
 .frame {

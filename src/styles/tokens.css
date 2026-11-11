@@ -59,6 +59,7 @@
   --border: oklch(calc(0.988 - 0.103 * var(--k-border)) calc(var(--k-neutral-c) * 1.25) var(--k-neutral-h));
   --border-soft: oklch(calc(0.988 - 0.068 * var(--k-border)) var(--k-neutral-c) var(--k-neutral-h));
   --grid: oklch(calc(0.988 - 0.088 * var(--k-border)) var(--k-neutral-c) var(--k-neutral-h));
+  --dot-grid: oklch(0.45 0.01 var(--k-ink-h) / 0.32);
 
   --text: oklch(0.23 0.012 var(--k-ink-h));
   --text-2: oklch(0.47 0.012 var(--k-ink-h));
@@ -114,6 +115,7 @@
   --border: oklch(1 0 0 / calc(0.09 * var(--k-border)));
   --border-soft: oklch(1 0 0 / calc(0.06 * var(--k-border)));
   --grid: oklch(1 0 0 / calc(0.06 * var(--k-border)));
+  --dot-grid: oklch(1 0 0 / 0.16);
 
   --text: oklch(0.95 0.004 var(--k-ink-h));
   --text-2: oklch(0.72 0.008 var(--k-ink-h));

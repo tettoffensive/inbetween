@@ -56,7 +56,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, oklch(from var(--text) l c h / 0.14) 1px, transparent 1.25px);
+  background-image: radial-gradient(circle, var(--dot-grid) 1px, transparent 1.25px);
   background-size: 16px 16px;
   background-position: center;
   mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
