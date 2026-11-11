@@ -73,7 +73,12 @@
 
   --shade: 0.2 0.02 var(--k-ink-h);
   --highlight: inset 0 1px 0 oklch(1 0 0 / calc(0.9 * var(--k-highlight)));
-  --shadow-raised:
+  /* Elevation tiers: surface (cards) < control (grabbable) < floating (overlays, subject) */
+  --shadow-surface:
+    var(--c1) oklch(var(--shade) / calc(0.035 * var(--k-shadow))),
+    0 calc(4px * var(--k-soft)) calc(12px * var(--k-soft)) calc(-6px * var(--k-soft))
+      oklch(var(--shade) / calc(0.05 * var(--k-shadow)));
+  --shadow-floating:
     var(--highlight), var(--s1) oklch(var(--shade) / calc(0.03 * var(--k-shadow))),
     var(--s2) oklch(var(--shade) / calc(0.04 * var(--k-shadow))),
     var(--s3) oklch(var(--shade) / calc(0.05 * var(--k-shadow))),
@@ -121,7 +126,8 @@
   --danger-soft: oklch(0.72 0.13 25 / 0.1);
 
   --highlight: inset 0 1px 0 oklch(1 0 0 / calc(0.06 * var(--k-highlight)));
-  --shadow-raised:
+  --shadow-surface: var(--c1) oklch(0 0 0 / calc(0.25 * var(--k-shadow)));
+  --shadow-floating:
     var(--highlight), var(--s1) oklch(0 0 0 / calc(0.2 * var(--k-shadow))),
     0 calc(4px * var(--k-soft)) calc(8px * var(--k-soft)) calc(-2px * var(--k-soft))
       oklch(0 0 0 / calc(0.25 * var(--k-shadow))),

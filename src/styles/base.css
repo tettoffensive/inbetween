@@ -54,7 +54,7 @@ p {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-raised);
+  box-shadow: var(--shadow-surface);
 }
 
 .well {
@@ -74,9 +74,9 @@ p {
   height: 32px;
   padding: 0 12px;
   border-radius: var(--radius-sm);
+  /* Secondary buttons are flat: hairline only. Depth is reserved for primary + grabbable. */
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, var(--surface), var(--surface-hover));
-  box-shadow: var(--shadow-control);
+  background: var(--surface);
   font-weight: 500;
   font-size: 13px;
   cursor: pointer;
@@ -89,7 +89,7 @@ p {
 }
 
 .btn:hover {
-  background: var(--surface-hover);
+  background: var(--well);
 }
 
 .btn:active {

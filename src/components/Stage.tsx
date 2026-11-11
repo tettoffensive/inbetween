@@ -67,7 +67,7 @@ export function Stage({
 
       <footer className={styles.transport}>
         <button
-          className="btn btn-icon"
+          className={`btn btn-primary btn-icon ${styles.play}`}
           onClick={() => onPlaying(!playing)}
           aria-label={playing ? 'Pause' : 'Play'}
           title={playing ? 'Pause (Space)' : 'Play (Space)'}
