@@ -109,8 +109,8 @@
 /* Spacing ruler */
 .ruler {
   position: relative;
-  height: 20px;
-  margin-top: 2px;
+  /* Headroom for the wave's crest. */
+  height: 30px;
 }
 
 .fine,
@@ -120,6 +120,8 @@
   width: 1px;
   border-radius: 1px;
   background: var(--text);
+  transform-origin: center;
+  will-change: transform;
 }
 
 .fine {
@@ -133,15 +135,6 @@
   width: 1.5px;
   margin: -9px 0 0 -0.75px;
   opacity: 0.85;
-  transition:
-    background-color var(--dur-fast),
-    transform var(--dur-fast) var(--ease-out);
-}
-
-.mark[data-active] {
-  background: var(--accent);
-  opacity: 1;
-  transform: scaleY(1.25);
 }
 
 .lane[data-reference] .mark {

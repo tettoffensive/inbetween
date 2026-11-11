@@ -14,6 +14,8 @@ const SIZE = 52
 const TRAVEL_Y = 64
 /** Faint ticks per drawing interval in the spacing ruler. */
 const FINE = 3
+/** Width of the wave that travels through the ruler, in px. */
+const WAVE_SIGMA = 14
 
 const SUBJECTS: { value: Subject; label: string }[] = [
   { value: 'x', label: 'Move X' },
@@ -162,7 +164,12 @@ function Lane({
   const start = Math.max(0, (width - travel - SIZE) / 2)
   const y = solve(curve, t)
   const samples = useMemo(() => sample(curve, intervals), [curve, intervals])
-  const active = Math.round(t * intervals)
+  // Gaussian bump centred on the subject's progress.
+  const x0 = start + SIZE / 2
+  const wave = (u: number) => {
+    const d = (u - y) * travel
+    return Math.exp(-(d * d) / (2 * WAVE_SIGMA * WAVE_SIGMA))
+  }
 
   // Each subject animates one property from a realistic UI start state.
   const center = start + travel / 2
@@ -197,17 +204,25 @@ function Lane({
         </div>
       </div>
       {/* Spacing ruler: faint ticks are an even time grid (where linear motion
-          would be), bold ticks are where each drawing actually lands. */}
+          would be), bold ticks are where each drawing actually lands. A wave
+          swells the ticks under the subject as it passes through. */}
       <div className={styles.ruler} aria-hidden>
-        {Array.from({ length: intervals * FINE + 1 }, (_, i) => (
-          <span key={`f${i}`} className={styles.fine} style={{ left: start + SIZE / 2 + (i / (intervals * FINE)) * travel }} />
-        ))}
+        {Array.from({ length: intervals * FINE + 1 }, (_, i) => {
+          const u = i / (intervals * FINE)
+          const g = wave(u)
+          return (
+            <span
+              key={`f${i}`}
+              className={styles.fine}
+              style={{ left: x0 + u * travel, transform: `scaleY(${1 + 1.1 * g})`, opacity: 0.13 + 0.42 * g }}
+            />
+          )
+        })}
         {samples.map((v, i) => (
           <span
             key={i}
             className={styles.mark}
-            data-active={i === active || undefined}
-            style={{ left: start + SIZE / 2 + v * travel }}
+            style={{ left: x0 + v * travel, transform: `scaleY(${1 + 0.55 * wave(v)})` }}
           />
         ))}
       </div>
