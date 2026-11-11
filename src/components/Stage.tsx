@@ -4,10 +4,12 @@ import { AnimatePresence, motion } from 'motion/react'
 import { PauseIcon, PlayIcon } from '@radix-ui/react-icons'
 import { TICK_RATES, frameCount, sample, solve, type Curve, type TickRate } from '../lib/bezier'
 import type { Subject } from '../lib/useEditor'
-import { useElementWidth } from '../hooks/hooks'
+import { useElementWidth, type Speed } from '../hooks/hooks'
 import { Segmented } from './Segmented'
 import { DurationSlider } from './Controls'
 import styles from './Stage.module.css'
+
+const SPEEDS: Speed[] = [1, 0.25, 0.1]
 
 const TRAVEL = 200
 const SIZE = 52
@@ -34,6 +36,8 @@ export function Stage({
   onSubject,
   t,
   waveT,
+  speed,
+  onSpeed,
   cycle,
   playing,
   onPlaying,
@@ -50,6 +54,8 @@ export function Stage({
   t: number
   /** Time for the ruler wave; continues past 1 during the hold. */
   waveT: number
+  speed: Speed
+  onSpeed: (s: Speed) => void
   /** Completed loop runs; rotation accumulates across them. */
   cycle: number
   playing: boolean
@@ -82,6 +88,17 @@ export function Stage({
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      <div className={styles.speedRow}>
+        <Segmented
+          id="speed"
+          label="Playback speed"
+          size="sm"
+          value={String(speed)}
+          onChange={(v) => onSpeed(Number(v) as Speed)}
+          options={SPEEDS.map((s) => ({ value: String(s), label: `${s}×`, title: `Play at ${s}× speed` }))}
+        />
       </div>
 
       <footer className={styles.transport}>

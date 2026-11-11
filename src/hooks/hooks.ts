@@ -43,7 +43,11 @@ const HOLD_MS = 500
  * it to alternate enter/exit (odd runs play the opposite change, still
  * along the curve) and to accumulate rotation.
  */
-export function usePlayback(duration: number) {
+export type Speed = 1 | 0.25 | 0.1
+
+/** `speed` slows the clock for inspection; t still maps to the real duration. */
+export function usePlayback(duration: number, speed: Speed = 1) {
+  const span = duration / speed
   const reduced = useReducedMotion()
   const [t, setT] = useState(0)
   const [cycle, setCycle] = useState(0)
@@ -71,16 +75,16 @@ export function usePlayback(duration: number) {
           setCycle(cycleRef.current)
         }
       } else {
-        tRef.current = Math.min(1, tRef.current + dt / duration)
+        tRef.current = Math.min(1, tRef.current + dt / span)
         if (tRef.current >= 1) hold = HOLD_MS
       }
       setT(tRef.current)
-      setWaveT(hold > 0 ? 1 + (HOLD_MS - hold) / duration : tRef.current)
+      setWaveT(hold > 0 ? 1 + (HOLD_MS - hold) / span : tRef.current)
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [playing, duration])
+  }, [playing, span])
 
   const scrub = (value: number) => {
     setPlaying(false)

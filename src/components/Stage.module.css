@@ -141,6 +141,13 @@
   background: var(--reference);
 }
 
+/* Playback speed, under the ruler */
+.speedRow {
+  display: flex;
+  justify-content: center;
+  padding: 2px 16px 10px;
+}
+
 /* Transport */
 .transport {
   display: flex;

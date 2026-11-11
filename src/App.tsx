@@ -1,8 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { DesktopIcon, MoonIcon, ResetIcon, SunIcon } from '@radix-ui/react-icons'
 import { useEditor, presetName } from './lib/useEditor'
-import { usePlayback, useTheme, useTweenedCurve } from './hooks/hooks'
+import { usePlayback, useTheme, useTweenedCurve, type Speed } from './hooks/hooks'
 import { Segmented } from './components/Segmented'
 import { Stage } from './components/Stage'
 import { CurveEditor } from './components/CurveEditor'
@@ -15,7 +15,8 @@ export default function App() {
   const [theme, setTheme] = useTheme()
   const { curve, source } = state.present
   const shown = useTweenedCurve(curve, state.dragging)
-  const playback = usePlayback(state.duration)
+  const [speed, setSpeed] = useState<Speed>(1)
+  const playback = usePlayback(state.duration, speed)
   const { setPlaying } = playback
 
   useEffect(() => {
@@ -119,6 +120,8 @@ export default function App() {
           onSubject={(value) => dispatch({ type: 'subject', value })}
           t={playback.t}
           waveT={playback.waveT}
+          speed={speed}
+          onSpeed={setSpeed}
           cycle={playback.cycle}
           playing={playback.playing}
           onPlaying={playback.setPlaying}
