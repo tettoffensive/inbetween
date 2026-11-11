@@ -126,7 +126,7 @@ export default function App() {
           onTickRate={(value) => dispatch({ type: 'tickRate', value })}
         />
       </main>
-      <OutputBar curve={curve} duration={state.duration} dispatch={dispatch} />
+      <OutputBar curve={curve} dispatch={dispatch} />
     </div>
   )
 }

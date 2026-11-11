@@ -9,13 +9,14 @@ import styles from './OutputBar.module.css'
  * Pinned output: the CSS that reproduces the motion. The same field is the
  * import: click it (or paste anywhere) to replace the motion with pasted CSS.
  */
-export function OutputBar({ curve, duration, dispatch }: { curve: Curve; duration: number; dispatch: Dispatch<Action> }) {
+export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatch<Action> }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const css = `transition: transform ${duration}ms ${format(curve)};`
+  // Just the timing function: it drops into any transition or animation.
+  const css = format(curve)
 
   const apply = (text: string) => {
     const r = parse(text)
@@ -88,7 +89,7 @@ export function OutputBar({ curve, duration, dispatch }: { curve: Curve; duratio
       </AnimatePresence>
 
       <div className={styles.bar} data-invalid={!!error || undefined}>
-        <span className={styles.tag}>CSS</span>
+        <span className={styles.tag}>Easing</span>
 
         {editing ? (
           <form
@@ -129,11 +130,7 @@ export function OutputBar({ curve, duration, dispatch }: { curve: Curve; duratio
           </form>
         ) : (
           <button className={styles.code} onClick={() => startEditing()} title="Click or paste anywhere to import CSS">
-            <span className={styles.prefix}>
-              <span className={styles.prop}>transition</span>: transform <span className={styles.num}>{duration}ms</span>{' '}
-            </span>
-            <span className={styles.fn}>{format(curve)}</span>
-            <span className={styles.prefix}>;</span>
+            <span className={styles.fn}>{css}</span>
           </button>
         )}
 
