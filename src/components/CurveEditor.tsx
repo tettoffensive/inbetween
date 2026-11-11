@@ -85,7 +85,7 @@ export function CurveEditor({
   const [x1, y1, x2, y2] = shown
 
   return (
-    <section className={`card ${styles.editor}`} aria-label="Curve">
+    <section className={`card ${styles.editor}`} aria-label="Curve" style={{ gridArea: 'curve' }}>
       <header className={styles.head}>
         <h2 className="eyebrow">Curve</h2>
         <p className={`${styles.readout} tnum`}>

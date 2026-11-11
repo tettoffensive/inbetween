@@ -6,7 +6,7 @@ import { usePlayback, useTheme, useTweenedCurve } from './hooks/hooks'
 import { Segmented } from './components/Segmented'
 import { Stage } from './components/Stage'
 import { CurveEditor } from './components/CurveEditor'
-import { Controls } from './components/Controls'
+import { CodePanel, ShapePanel } from './components/Controls'
 import styles from './App.module.css'
 
 export default function App() {
@@ -96,6 +96,19 @@ export default function App() {
       </header>
 
       <main className={styles.main}>
+        <ShapePanel curve={curve} reference={state.reference} dispatch={dispatch} />
+        <CurveEditor
+          curve={curve}
+          shown={shown}
+          ghost={state.ghost}
+          changeId={state.changeId}
+          reference={state.reference}
+          t={playback.t}
+          duration={state.duration}
+          onDragStart={() => dispatch({ type: 'checkpoint', drag: true })}
+          onDrag={(c) => dispatch({ type: 'update', curve: c, source: 'custom' })}
+          onDragEnd={() => dispatch({ type: 'endDrag' })}
+        />
         <Stage
           curve={curve}
           reference={state.reference}
@@ -106,22 +119,9 @@ export default function App() {
           playing={playback.playing}
           onPlaying={playback.setPlaying}
           onScrub={playback.scrub}
+          onDuration={(value) => dispatch({ type: 'duration', value })}
         />
-        <div className={styles.lower}>
-          <CurveEditor
-            curve={curve}
-            shown={shown}
-            ghost={state.ghost}
-            changeId={state.changeId}
-            reference={state.reference}
-            t={playback.t}
-            duration={state.duration}
-            onDragStart={() => dispatch({ type: 'checkpoint', drag: true })}
-            onDrag={(c) => dispatch({ type: 'update', curve: c, source: 'custom' })}
-            onDragEnd={() => dispatch({ type: 'endDrag' })}
-          />
-          <Controls curve={curve} duration={state.duration} reference={state.reference} dispatch={dispatch} />
-        </div>
+        <CodePanel curve={curve} duration={state.duration} dispatch={dispatch} />
       </main>
     </div>
   )

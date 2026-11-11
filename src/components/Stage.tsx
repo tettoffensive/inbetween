@@ -6,7 +6,10 @@ import { FPS, frameCount, sample, solve, type Curve } from '../lib/bezier'
 import type { Subject } from '../lib/useEditor'
 import { useElementWidth } from '../hooks/hooks'
 import { Segmented } from './Segmented'
+import { DurationSlider } from './Controls'
 import styles from './Stage.module.css'
+
+const TRAVEL = 160
 
 const SUBJECTS: { value: Subject; label: string }[] = [
   { value: 'slide', label: 'Slide' },
@@ -25,6 +28,7 @@ export function Stage({
   playing,
   onPlaying,
   onScrub,
+  onDuration,
 }: {
   curve: Curve
   reference: Curve | null
@@ -35,17 +39,15 @@ export function Stage({
   playing: boolean
   onPlaying: (p: boolean) => void
   onScrub: (t: number) => void
+  onDuration: (ms: number) => void
 }) {
   const intervals = frameCount(duration)
   const frame = Math.round(t * intervals)
 
   return (
-    <section className={`card ${styles.stage}`} aria-label="Preview">
+    <section className={`card ${styles.stage}`} aria-label="Preview" style={{ gridArea: 'preview' }}>
       <header className={styles.bar}>
-        <Segmented id="subject" label="Preview subject" value={subject} onChange={onSubject} options={SUBJECTS} />
-        <p className={`${styles.meta} tnum`}>
-          {FPS} fps · {intervals + 1} drawings
-        </p>
+        <Segmented id="subject" label="Preview subject" size="sm" value={subject} onChange={onSubject} options={SUBJECTS} />
       </header>
 
       <div className={styles.lanes}>
@@ -89,14 +91,19 @@ export function Stage({
           </Slider.Track>
           <Slider.Thumb className={styles.scrubThumb} />
         </Slider.Root>
-        <p className={`${styles.time} tnum`}>
-          <span>{String(Math.round(t * duration)).padStart(4, ' ')}</span>
-          <span className={styles.dim}> / {duration}ms</span>
-          <span className={styles.frame}>
-            f{String(frame).padStart(2, '0')}
-          </span>
-        </p>
+        <span className={`${styles.frame} tnum`} title={`${Math.round(t * duration)}ms`}>
+          f{String(frame).padStart(2, '0')}
+        </span>
       </footer>
+
+      <div className={styles.duration}>
+        <span className={styles.durLabel}>Duration</span>
+        <DurationSlider value={duration} onChange={onDuration} />
+        <span className={`${styles.durValue} tnum`}>{duration}ms</span>
+      </div>
+      <p className={`${styles.meta} tnum`}>
+        {intervals + 1} drawings at {FPS} fps · dots are equal time apart
+      </p>
     </section>
   )
 }
@@ -128,27 +135,29 @@ function Lane({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const width = useElementWidth(ref)
-  const size = subject === 'dot' ? 20 : 56
-  const travel = Math.max(0, width - 56)
+  const size = subject === 'dot' ? 16 : 44
+  // Realistic UI distance, centred in the lane.
+  const travel = Math.max(0, Math.min(TRAVEL, width - 44))
+  const start = Math.max(0, (width - travel - 44) / 2)
   const y = solve(curve, t)
   const samples = useMemo(() => sample(curve, intervals), [curve, intervals])
   const active = Math.round(t * intervals)
 
   let subjectStyle: React.CSSProperties
   if (subject === 'slide' || subject === 'dot') {
-    const offset = (56 - size) / 2
-    subjectStyle = { transform: `translateX(${offset + y * travel}px)` }
+    const offset = (44 - size) / 2
+    subjectStyle = { transform: `translateX(${start + offset + y * travel}px)` }
   } else if (subject === 'scale') {
-    subjectStyle = { left: travel / 2, transform: `scale(${0.25 + 0.75 * y})` }
+    subjectStyle = { left: start + travel / 2, transform: `scale(${0.6 + 0.4 * y})` }
   } else {
-    subjectStyle = { left: travel / 2, opacity: Math.min(1, Math.max(0, y)) }
+    subjectStyle = { left: start + travel / 2, opacity: Math.min(1, Math.max(0, y)) }
   }
 
   return (
     <div className={styles.lane} data-reference={reference || undefined}>
       <span className={styles.laneLabel}>{label}</span>
       <div ref={ref} className={styles.track}>
-        <div className={styles.rail} />
+        <div className={styles.rail} style={{ left: start + 22, width: travel }} />
         <div
           className={styles.subject}
           data-kind={subject === 'dot' ? 'dot' : 'card'}
@@ -164,7 +173,7 @@ function Lane({
             className={styles.dot}
             data-active={i === active || undefined}
             data-key={i === 0 || i === intervals || undefined}
-            style={{ left: 28 + v * travel }}
+            style={{ left: start + 22 + v * travel }}
           />
         ))}
       </div>

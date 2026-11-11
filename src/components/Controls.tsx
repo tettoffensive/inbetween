@@ -6,41 +6,22 @@ import { PRESETS, format, nudge, parse, type Curve, type Nudge } from '../lib/be
 import { presetName, type Action } from '../lib/useEditor'
 import styles from './Controls.module.css'
 
-export const Controls = memo(function Controls({
+export const ShapePanel = memo(function ShapePanel({
   curve,
-  duration,
   reference,
   dispatch,
 }: {
   curve: Curve
-  duration: number
   reference: Curve | null
   dispatch: Dispatch<Action>
 }) {
   const active = presetName(curve)
 
   return (
-    <aside className={`card ${styles.panel}`} aria-label="Controls">
+    <aside className={`card ${styles.panel}`} aria-label="Shape" style={{ gridArea: 'shape' }}>
       <Section title="Feel" hint="Nudges reshape whatever curve is current.">
         <NudgeRow label="Start" curve={curve} dispatch={dispatch} less="start-gentler" more="start-snappier" lessLabel="Gentler" moreLabel="Snappier" />
         <NudgeRow label="Landing" curve={curve} dispatch={dispatch} less="land-softer" more="land-firmer" lessLabel="Softer" moreLabel="Firmer" />
-      </Section>
-
-      <Section title="Duration" aside={<span className="tnum">{duration}ms</span>}>
-        <Slider.Root
-          className={styles.slider}
-          min={100}
-          max={1500}
-          step={10}
-          value={[duration]}
-          onValueChange={([v]) => dispatch({ type: 'duration', value: v })}
-          aria-label="Duration"
-        >
-          <Slider.Track className={styles.sliderTrack}>
-            <Slider.Range className={styles.sliderRange} />
-          </Slider.Track>
-          <Slider.Thumb className={styles.sliderThumb} />
-        </Slider.Root>
       </Section>
 
       <Section title="Presets">
@@ -74,11 +55,44 @@ export const Controls = memo(function Controls({
         </button>
         {reference && <p className={`${styles.refValue} tnum`}>{format(reference)}</p>}
       </Section>
+    </aside>
+  )
+})
 
+export const CodePanel = memo(function CodePanel({
+  curve,
+  duration,
+  dispatch,
+}: {
+  curve: Curve
+  duration: number
+  dispatch: Dispatch<Action>
+}) {
+  return (
+    <aside className={`card ${styles.panel}`} aria-label="CSS" style={{ gridArea: 'code' }}>
       <ImportExport curve={curve} duration={duration} dispatch={dispatch} />
     </aside>
   )
 })
+
+export function DurationSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <Slider.Root
+      className={styles.slider}
+      min={100}
+      max={1500}
+      step={10}
+      value={[value]}
+      onValueChange={([v]) => onChange(v)}
+      aria-label="Duration"
+    >
+      <Slider.Track className={styles.sliderTrack}>
+        <Slider.Range className={styles.sliderRange} />
+      </Slider.Track>
+      <Slider.Thumb className={styles.sliderThumb} />
+    </Slider.Root>
+  )
+}
 
 function Section({
   title,
