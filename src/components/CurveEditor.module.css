@@ -51,9 +51,9 @@
   vector-effect: non-scaling-stroke;
 }
 
-.grid line {
-  stroke: var(--grid);
-  stroke-width: 1;
+.dot {
+  fill: var(--text);
+  fill-opacity: 0.16;
 }
 
 .frame {

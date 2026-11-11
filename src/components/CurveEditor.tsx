@@ -1,4 +1,4 @@
-import { useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react'
+import { useId, useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react'
 import { motion } from 'motion/react'
 import { clampCurve, frameCount, sample, solve, type Curve, type TickRate } from '../lib/bezier'
 import styles from './CurveEditor.module.css'
@@ -6,6 +6,7 @@ import styles from './CurveEditor.module.css'
 // Plot space: x in [0,1] time, y in [-0.2, 1.2] progress. Square viewBox with margin.
 const PAD = 0.2
 const SPAN = 1 + PAD * 2
+const DOT_STEP = 1 / 8
 const sx = (x: number) => x
 const sy = (y: number) => 1 - y
 const pct = (v: number) => `${((v + PAD) / SPAN) * 100}%`
@@ -42,6 +43,7 @@ export function CurveEditor({
   onDragEnd: () => void
 }) {
   const boxRef = useRef<HTMLDivElement>(null)
+  const dotsId = `dots-${useId().replace(/:/g, '')}`
   const intervals = frameCount(duration, tickRate)
   const samples = useMemo(() => sample(shown, intervals), [shown, intervals])
   const y = solve(shown, t)
@@ -103,14 +105,14 @@ export function CurveEditor({
       <div className={styles.plotWrap}>
         <div className={`well ${styles.plot}`} ref={boxRef}>
           <svg viewBox={`${-PAD} ${-PAD} ${SPAN} ${SPAN}`} className={styles.svg} aria-hidden>
-            {/* grid */}
-            {[0.25, 0.5, 0.75].map((v) => (
-              <g key={v} className={styles.grid}>
-                <line x1={v} x2={v} y1={-PAD} y2={1 + PAD} />
-                <line x1={-PAD} x2={1 + PAD} y1={sy(v)} y2={sy(v)} />
-              </g>
-            ))}
+            {/* Dot grid in plot units: one dot every 1/8, landing on the 0 and 1 edges. */}
+            <defs>
+              <pattern id={dotsId} width={DOT_STEP} height={DOT_STEP} patternUnits="userSpaceOnUse" x={-DOT_STEP / 2} y={-DOT_STEP / 2}>
+                <circle cx={DOT_STEP / 2} cy={DOT_STEP / 2} r={0.0035} className={styles.dot} />
+              </pattern>
+            </defs>
             <rect x={0} y={0} width={1} height={1} className={styles.frame} />
+            <rect x={-PAD} y={-PAD} width={SPAN} height={SPAN} fill={`url(#${dotsId})`} />
             <line x1={0} y1={1} x2={1} y2={0} className={styles.diagonal} />
 
             {/* equal-time verticals: frame marks along the time axis */}
