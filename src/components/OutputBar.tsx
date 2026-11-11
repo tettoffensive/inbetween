@@ -45,11 +45,15 @@ export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatc
     const el = e.currentTarget
     const caret = el.selectionStart ?? 0
     const dir = e.key === 'ArrowUp' ? 1 : -1
-    const r = nudgeNumberAt(draft, caret, dir, e.shiftKey ? 10 : 1)
+    // x arguments (1st and 3rd) must stay in 0–1: clamp to the edge.
+    const open = draft.indexOf('(')
+    const arg = open >= 0 && caret > open ? draft.slice(open + 1, caret).split(',').length - 1 : -1
+    const bounds = arg === 0 || arg === 2 ? ([0, 1] as const) : undefined
+    const r = nudgeNumberAt(draft, caret, dir, e.shiftKey ? 10 : 1, bounds)
     if (!r) return
     e.preventDefault()
     const parsed = parse(r.text)
-    // Ignore nudges that would make the easing invalid (e.g. x outside 0–1).
+    // Ignore anything else that would make the easing invalid.
     if (!parsed.ok) return
     // One undo step per press-and-hold run.
     if (!e.repeat) dispatch({ type: 'checkpoint' })

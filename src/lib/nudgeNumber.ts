@@ -8,6 +8,8 @@ export function nudgeNumberAt(
   caret: number,
   direction: 1 | -1,
   multiplier = 1,
+  /** Optional [min, max] to clamp the result to. */
+  bounds?: readonly [number, number],
 ): { text: string; caret: number } | null {
   for (const m of text.matchAll(/-?\d*\.?\d+/g)) {
     const start = m.index!
@@ -26,7 +28,8 @@ export function nudgeNumberAt(
     const decimals = Math.max(raw.length - point - 1, 0, -exponent)
     const step = 10 ** exponent * multiplier
 
-    const value = Number(raw) + direction * step
+    let value = Number(raw) + direction * step
+    if (bounds) value = Math.min(bounds[1], Math.max(bounds[0], value))
     const next = (Math.round(value * 10 ** decimals) / 10 ** decimals).toFixed(decimals)
     // Keep the caret at the same distance from the number's end so it stays
     // beside the same decimal place even if the integer part grows.
