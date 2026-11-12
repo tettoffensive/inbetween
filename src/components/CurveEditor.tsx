@@ -1,8 +1,8 @@
-import { useId, useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react'
+import { useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { motion } from 'motion/react'
 import { ContextMenu } from 'radix-ui'
 import { CopyIcon, DrawingPinFilledIcon, DrawingPinIcon, LoopIcon, ResetIcon } from '@radix-ui/react-icons'
-import { clampCurve, frameCount, sample, solve, type Curve, type TickRate } from '../lib/bezier'
+import { BEND_RANGE, bend, clampCurve, frameCount, nearestParam, pointAt, sample, solve, type Curve, type TickRate } from '../lib/bezier'
 import styles from './CurveEditor.module.css'
 
 // Plot space: x in [0,1] time, y in [-0.2, 1.2] progress. Square viewBox with margin.
@@ -68,6 +68,35 @@ export function CurveEditor({
     next[which * 2] = x
     next[which * 2 + 1] = yy
     onDrag(clampCurve(next))
+  }
+
+  // Bend: grab the curve itself and drag; both handles adjust so the grabbed
+  // point follows the pointer (like Figma / Illustrator's bend).
+  const bendRef = useRef<{ u: number; start: Curve; gx: number; gy: number } | null>(null)
+  const [bendU, setBendU] = useState<number | null>(null)
+  const bendProps = {
+    onPointerDown: (e: PointerEvent<SVGPathElement>) => {
+      if (e.button !== 0) return
+      e.currentTarget.setPointerCapture(e.pointerId)
+      const [x, yy] = toPlot(e)
+      const u = Math.min(BEND_RANGE[1], Math.max(BEND_RANGE[0], nearestParam(curve, x, yy)))
+      const [gx, gy] = pointAt(curve, u)
+      bendRef.current = { u, start: curve, gx, gy }
+      setBendU(u)
+      onDragStart()
+    },
+    onPointerMove: (e: PointerEvent<SVGPathElement>) => {
+      const b = bendRef.current
+      if (!b || !e.currentTarget.hasPointerCapture(e.pointerId)) return
+      const [x, yy] = toPlot(e)
+      onDrag(bend(b.start, b.u, x - b.gx, yy - b.gy))
+    },
+    onPointerUp: () => {
+      if (!bendRef.current) return
+      bendRef.current = null
+      setBendU(null)
+      onDragEnd()
+    },
   }
 
   const handleProps = (which: 0 | 1) => ({
@@ -158,6 +187,11 @@ export function CurveEditor({
                 <line x1={1} y1={sy(1)} x2={x2} y2={sy(y2)} className={styles.arm} />
 
                 <path d={pathFor(shown)} className={styles.curve} />
+            {/* Wide invisible stroke: the grab area for bending the curve. */}
+            <path d={pathFor(shown)} className={styles.curveHit} {...bendProps} onPointerCancel={bendProps.onPointerUp} />
+            {bendU !== null && (
+              <circle cx={pointAt(curve, bendU)[0]} cy={sy(pointAt(curve, bendU)[1])} r={0.016} className={styles.bendDot} />
+            )}
 
                 {/* Spacing projected onto the progress axis: each frame's height.
                     Equal-time ticks below, resulting spacing on the left. */}

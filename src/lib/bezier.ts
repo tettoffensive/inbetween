@@ -143,6 +143,50 @@ export function nudge([x1, y1, x2, y2]: Curve, kind: Nudge): Curve {
   }
 }
 
+/** Point on the curve (P0 = 0,0, P3 = 1,1) at Bézier parameter u. */
+export function pointAt([x1, y1, x2, y2]: Curve, u: number): [number, number] {
+  const a = 3 * (1 - u) * (1 - u) * u
+  const b = 3 * (1 - u) * u * u
+  const c = u * u * u
+  return [a * x1 + b * x2 + c, a * y1 + b * y2 + c]
+}
+
+/** Bézier parameter of the curve point nearest (x, y), by sampling then refining. */
+export function nearestParam(curve: Curve, x: number, y: number): number {
+  const dist = (u: number) => {
+    const [px, py] = pointAt(curve, u)
+    return (px - x) ** 2 + (py - y) ** 2
+  }
+  let best = 0
+  for (let i = 1; i <= 100; i++) if (dist(i / 100) < dist(best)) best = i / 100
+  // Narrow in around the best sample.
+  let lo = Math.max(0, best - 0.01)
+  let hi = Math.min(1, best + 0.01)
+  for (let k = 0; k < 20; k++) {
+    const m1 = lo + (hi - lo) / 3
+    const m2 = hi - (hi - lo) / 3
+    if (dist(m1) < dist(m2)) hi = m2
+    else lo = m1
+  }
+  return (lo + hi) / 2
+}
+
+/** Bend grabs stay away from the ends, where the handles barely affect the curve. */
+export const BEND_RANGE = [0.15, 0.85] as const
+
+/**
+ * Bend tool: move the curve so its point at parameter u travels by (dx, dy),
+ * changing the two handles as little as possible (the minimal-norm solution:
+ * each handle moves in proportion to its Bernstein weight at u). Exact unless
+ * the result has to be clamped to CSS's 0–1 range for x.
+ */
+export function bend([x1, y1, x2, y2]: Curve, u: number, dx: number, dy: number): Curve {
+  const b1 = 3 * (1 - u) * (1 - u) * u
+  const b2 = 3 * (1 - u) * u * u
+  const n = b1 * b1 + b2 * b2
+  return clampCurve([x1 + (dx * b1) / n, y1 + (dy * b1) / n, x2 + (dx * b2) / n, y2 + (dy * b2) / n])
+}
+
 /**
  * The enter-leg time whose position matches an exit-leg moment: the exit leg
  * shows 1 - p(t), so find t' with p(t') = 1 - p(t). Nearest of 240 samples,

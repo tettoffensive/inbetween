@@ -104,6 +104,28 @@
   stroke-linecap: round;
 }
 
+/* Grab area for bending: invisible, generous, only on the stroke. */
+.curveHit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 18;
+  pointer-events: stroke;
+  cursor: grab;
+  touch-action: none;
+}
+
+.curveHit:active {
+  cursor: grabbing;
+}
+
+/* The point being bent, shown while dragging. */
+.bendDot {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 2;
+  pointer-events: none;
+}
+
 .spacing {
   stroke: var(--text);
   stroke-opacity: 0.7;

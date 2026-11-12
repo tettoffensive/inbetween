@@ -4,7 +4,7 @@ Design CSS easing by feel.
 
 ![Inbetween: curve editor, presets and live preview](docs/screenshot.png)
 
-Inbetween is a small editor for `cubic-bezier()` timing functions. You can drag the curve handles, or nudge the feel with plain words like *Gentler*, *Quicker* and *Softer*. The preview plays the motion, and a spacing ruler shows where each frame lands, the way an animator spaces inbetweens. When it feels right, copy the CSS.
+Inbetween is a small editor for `cubic-bezier()` timing functions. You can drag the curve handles, grab the curve itself to bend it, or nudge the feel with plain words like *Gentler*, *Quicker* and *Softer*. The preview plays the motion, and a spacing ruler shows where each frame lands, the way an animator spaces inbetweens. When it feels right, copy the CSS.
 
 - Six presets named for when to use them, each with a suggested duration
 - Feel nudges for the whole motion, the start and the landing, previewed on hover
