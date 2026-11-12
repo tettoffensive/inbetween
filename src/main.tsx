@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MotionConfig } from 'motion/react'
 import { Tooltip } from 'radix-ui'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import '@fontsource-variable/inter/opsz.css'
 import '@fontsource-variable/jetbrains-mono/wght.css'
 import './styles/tokens.css'
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
       <Tooltip.Provider delayDuration={500} skipDelayDuration={300} disableHoverableContent>
         <App />
         {import.meta.env.DEV && <Tuner />}
+        <SpeedInsights />
       </Tooltip.Provider>
     </MotionConfig>
   </StrictMode>,
