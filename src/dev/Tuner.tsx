@@ -12,9 +12,9 @@ const GROUPS: { title: string; knobs: Knob[] }[] = [
   {
     title: 'Accent',
     knobs: [
-      { key: 'accent-h', label: 'Hue', min: 0, max: 360, step: 1, def: 275 },
-      { key: 'accent-c', label: 'Chroma', min: 0, max: 0.2, step: 0.005, def: 0.11 },
-      { key: 'accent-l', label: 'Lightness', min: 0.4, max: 0.72, step: 0.01, def: 0.56 },
+      { key: 'accent-h', label: 'Hue', min: 0, max: 360, step: 1, def: 48 },
+      { key: 'accent-c', label: 'Chroma', min: 0, max: 0.2, step: 0.005, def: 0.18 },
+      { key: 'accent-l', label: 'Lightness', min: 0.4, max: 0.72, step: 0.01, def: 0.64 },
     ],
   },
   {
@@ -23,7 +23,7 @@ const GROUPS: { title: string; knobs: Knob[] }[] = [
       { key: 'neutral-h', label: 'Surface hue', min: 0, max: 360, step: 1, def: 78 },
       { key: 'neutral-c', label: 'Surface tint', min: 0, max: 0.03, step: 0.001, def: 0.004 },
       { key: 'ink-h', label: 'Ink hue', min: 0, max: 360, step: 1, def: 270 },
-      { key: 'contrast', label: 'Surface contrast', min: 0, max: 2.5, step: 0.05, def: 1 },
+      { key: 'contrast', label: 'Surface contrast', min: 0, max: 2.5, step: 0.05, def: 1.2 },
       { key: 'border', label: 'Borders', min: 0, max: 2.5, step: 0.05, def: 1 },
     ],
   },

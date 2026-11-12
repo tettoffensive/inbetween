@@ -9,13 +9,13 @@
 
 :root {
   /* ---- Knobs ---- */
-  --k-accent-h: 275;
-  --k-accent-c: 0.11;
-  --k-accent-l: 0.56;
+  --k-accent-h: 48;
+  --k-accent-c: 0.18;
+  --k-accent-l: 0.64;
   --k-neutral-h: 78;
   --k-neutral-c: 0.004;
   --k-ink-h: 270;
-  --k-contrast: 1;
+  --k-contrast: 1.2;
   --k-border: 1;
   --k-shadow: 1;
   --k-soft: 1;
@@ -71,9 +71,10 @@
   --knob: linear-gradient(180deg, var(--surface), var(--surface-hover));
 
   --accent: oklch(var(--k-accent-l) var(--k-accent-c) var(--k-accent-h));
-  --accent-strong: oklch(calc(var(--k-accent-l) - 0.08) calc(var(--k-accent-c) * 1.1) var(--k-accent-h));
+  /* Accent as text: dark enough for 4.5:1 on the light surfaces. */
+  --accent-strong: oklch(calc(var(--k-accent-l) - 0.12) calc(var(--k-accent-c) * 0.95) var(--k-accent-h));
   --accent-soft: oklch(var(--k-accent-l) var(--k-accent-c) var(--k-accent-h) / 0.12);
-  --accent-ring: oklch(var(--k-accent-l) var(--k-accent-c) var(--k-accent-h) / 0.35);
+  --accent-ring: oklch(var(--k-accent-l) var(--k-accent-c) var(--k-accent-h) / 0.5);
   --reference: oklch(0.6 0.01 var(--k-ink-h));
   --danger: oklch(0.55 0.15 25);
   --danger-soft: oklch(0.55 0.15 25 / 0.08);
@@ -130,10 +131,11 @@
   --switch-track: oklch(1 0 0 / 0.1);
   --knob: linear-gradient(180deg, oklch(0.9 0.004 var(--k-ink-h)), oklch(0.8 0.006 var(--k-ink-h)));
 
-  --accent: oklch(calc(var(--k-accent-l) + 0.16) calc(var(--k-accent-c) * 0.9) var(--k-accent-h));
-  --accent-strong: oklch(calc(var(--k-accent-l) + 0.24) calc(var(--k-accent-c) * 0.8) var(--k-accent-h));
-  --accent-soft: oklch(calc(var(--k-accent-l) + 0.16) calc(var(--k-accent-c) * 0.9) var(--k-accent-h) / 0.16);
-  --accent-ring: oklch(calc(var(--k-accent-l) + 0.16) calc(var(--k-accent-c) * 0.9) var(--k-accent-h) / 0.4);
+  /* A small lift keeps a bright accent saturated rather than pastel. */
+  --accent: oklch(calc(var(--k-accent-l) + 0.08) var(--k-accent-c) var(--k-accent-h));
+  --accent-strong: oklch(calc(var(--k-accent-l) + 0.14) calc(var(--k-accent-c) * 0.9) var(--k-accent-h));
+  --accent-soft: oklch(calc(var(--k-accent-l) + 0.08) var(--k-accent-c) var(--k-accent-h) / 0.16);
+  --accent-ring: oklch(calc(var(--k-accent-l) + 0.08) var(--k-accent-c) var(--k-accent-h) / 0.5);
   --reference: oklch(0.6 0.01 var(--k-ink-h));
   --danger: oklch(0.72 0.13 25);
   --danger-soft: oklch(0.72 0.13 25 / 0.1);
