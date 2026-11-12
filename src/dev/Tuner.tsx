@@ -20,7 +20,7 @@ const GROUPS: { title: string; knobs: Knob[] }[] = [
   {
     title: 'Neutrals',
     knobs: [
-      { key: 'neutral-h', label: 'Surface hue', min: 0, max: 360, step: 1, def: 85 },
+      { key: 'neutral-h', label: 'Surface hue', min: 0, max: 360, step: 1, def: 78 },
       { key: 'neutral-c', label: 'Surface tint', min: 0, max: 0.03, step: 0.001, def: 0.004 },
       { key: 'ink-h', label: 'Ink hue', min: 0, max: 360, step: 1, def: 270 },
       { key: 'contrast', label: 'Surface contrast', min: 0, max: 2.5, step: 0.05, def: 1 },
@@ -38,7 +38,7 @@ const GROUPS: { title: string; knobs: Knob[] }[] = [
   },
   {
     title: 'Shape',
-    knobs: [{ key: 'radius', label: 'Radius', min: 0, max: 2, step: 0.05, def: 1 }],
+    knobs: [{ key: 'radius', label: 'Radius', min: 0, max: 2, step: 0.05, def: 0.6 }],
   },
 ]
 

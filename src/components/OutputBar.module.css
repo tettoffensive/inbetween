@@ -1,29 +1,23 @@
 .dock {
-  position: fixed;
-  left: 50%;
-  bottom: 16px;
-  z-index: 40;
-  width: min(560px, calc(100vw - 32px));
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  pointer-events: none;
+  position: relative;
+  min-width: 0;
+  container-type: inline-size;
 }
 
-.dock > * {
-  pointer-events: auto;
-}
-
-/* Floating tier: the one overlay in the workspace. */
+/* Floating tier: sits under the curve it describes. */
+/* A code block: toolbar row (format, Paste, Copy) over a full-width line of
+   output. Fixed height, so switching formats never moves anything. */
 .bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  grid-template-areas:
+    'chip . paste copy'
+    'code code code code';
   align-items: center;
-  gap: 8px;
-  height: 52px;
-  padding: 0 8px 0 14px;
-  border-radius: 16px;
+  column-gap: 6px;
+  row-gap: 8px;
+  padding: 8px;
+  border-radius: var(--radius-lg);
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-floating);
@@ -37,52 +31,93 @@
   box-shadow: var(--shadow-floating), 0 0 0 3px var(--danger-soft);
 }
 
-.tag {
-  flex: none;
-  padding: 2px 6px;
-  border-radius: 5px;
-  background: var(--well);
+.chip {
+  grid-area: chip;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  padding: 0 4px 0 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-soft);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--text-3);
+  background: var(--well);
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast),
+    border-color var(--dur-fast);
+}
+
+.chip:hover,
+.chip[data-state='open'] {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.chip svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.6;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.chip[data-state='open'] svg {
+  transform: rotate(180deg);
 }
 
 .field {
-  flex: 1;
-  min-width: 0;
+  grid-area: code;
   display: flex;
+  min-width: 0;
 }
 
 .code,
 .input {
+  grid-area: code;
   flex: 1;
   min-width: 0;
-  height: 36px;
-  padding: 0 10px;
+  height: 40px;
+  padding: 0 12px;
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: 12.5px;
   text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
+/* Always one line. If it's too long (phones), it scrolls sideways and the
+   right edge fades while there's more to see. */
 .code {
-  border: 1px solid transparent;
-  background: transparent;
+  display: flex;
+  align-items: center;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  border: 1px solid var(--border-soft);
+  background: var(--well);
+  box-shadow: var(--shadow-well);
   color: var(--text-2);
   cursor: text;
-  transition:
-    background-color var(--dur-fast),
-    border-color var(--dur-fast);
+  transition: border-color var(--dur-fast);
+}
+
+.code::-webkit-scrollbar {
+  display: none;
+}
+
+.code[data-overflow] {
+  mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
 }
 
 .code:hover {
-  background: var(--well);
-  border-color: var(--border-soft);
+  border-color: var(--border);
+}
+
+/* Non-CSS formats are output only: one click selects it all. */
+.readonly {
+  user-select: all;
 }
 
 .input {
@@ -102,7 +137,14 @@
 }
 
 .error {
-  align-self: center;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 1;
+  /* Centred with margins: motion owns transform. */
+  margin: 0 auto;
+  width: fit-content;
   max-width: 100%;
   padding: 6px 12px;
   border-radius: 10px;
@@ -114,15 +156,15 @@
 }
 
 .paste {
-  flex: none;
-  height: 36px;
+  grid-area: paste;
+  height: 32px;
 }
 
 .copy {
+  grid-area: copy;
   position: relative;
-  flex: none;
-  height: 36px;
-  min-width: 92px;
+  height: 32px;
+  min-width: 84px;
   overflow: hidden;
 }
 
@@ -145,14 +187,11 @@
   clip-path: inset(0 0 0 0);
 }
 
-@media (max-width: 480px) {
-  .tag,
-  .copyText {
-    display: none;
-  }
-  .copy,
-  .paste {
-    min-width: 40px;
-    padding: 0;
+/* Phones: slightly smaller code so most formats still fit on one line. */
+@container (max-width: 400px) {
+  .code,
+  .input {
+    padding-inline: 10px;
+    font-size: 12px;
   }
 }

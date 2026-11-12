@@ -1,4 +1,13 @@
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type RefObject,
+  type SetStateAction,
+} from 'react'
 import { useReducedMotion } from 'motion/react'
 import { solve, type Curve } from '../lib/bezier'
 
@@ -46,16 +55,49 @@ const HOLD_MS = 500
 export type Speed = 1 | 0.25 | 0.1
 
 /** `speed` slows the clock for inspection; t still maps to the real duration. */
-export function usePlayback(duration: number, speed: Speed = 1) {
+/**
+ * `toEnterTime` maps an exit-leg moment to the enter-leg time with the same
+ * position. Pausing on an exit leg uses it so the subject stays exactly where
+ * it is while the scrubber moves to the matching point; paused, the timeline
+ * always reads as the enter leg (frame 0 = start). Omit it for subjects with
+ * no exit leg (Rotate).
+ */
+export function usePlayback(duration: number, speed: Speed = 1, toEnterTime?: (t: number) => number) {
   const span = duration / speed
   const reduced = useReducedMotion()
   const [t, setT] = useState(0)
   const [cycle, setCycle] = useState(0)
   /** Like t, but keeps running through the hold (> 1) so effects can follow through. */
   const [waveT, setWaveT] = useState(0)
-  const [playing, setPlaying] = useState(!reduced)
+  const [playing, setPlayingState] = useState(!reduced)
   const tRef = useRef(0)
   const cycleRef = useRef(0)
+  const playingRef = useRef(playing)
+  const toEnterRef = useRef(toEnterTime)
+  useLayoutEffect(() => {
+    toEnterRef.current = toEnterTime
+  })
+
+  const setPlaying = useCallback((v: SetStateAction<boolean>) => {
+    const next = typeof v === 'function' ? v(playingRef.current) : v
+    playingRef.current = next
+    if (!next) {
+      // Pausing mid exit leg: keep the subject still and move the time
+      // instead, then count this loop as an enter leg. Paused, the timeline
+      // always reads as the enter leg, and resuming flows into the next
+      // exit leg without a snap.
+      const map = toEnterRef.current
+      if (map && cycleRef.current % 2 === 1) {
+        const tt = map(tRef.current)
+        tRef.current = tt
+        setT(tt)
+        setWaveT(tt)
+        cycleRef.current += 1
+        setCycle(cycleRef.current)
+      }
+    }
+    setPlayingState(next)
+  }, [])
 
   useEffect(() => {
     if (!playing) return
@@ -92,7 +134,9 @@ export function usePlayback(duration: number, speed: Speed = 1) {
     setT(value)
     setWaveT(value)
   }
-  return { t, waveT, cycle, playing, setPlaying, scrub }
+  /** Odd loops play the opposite change (exit). */
+  const exitLeg = cycle % 2 === 1
+  return { t, waveT, cycle, exitLeg, playing, setPlaying, scrub }
 }
 
 export function useElementWidth<T extends HTMLElement>(ref: RefObject<T | null>) {
@@ -109,7 +153,96 @@ export function useElementWidth<T extends HTMLElement>(ref: RefObject<T | null>)
   return width
 }
 
+/** Captured at import: false on the server, so the initial paint matches the client. */
+const IS_MAC =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+
+/** The platform's shortcut modifier. We use Option (⌥) / Alt instead of ⌘ / Ctrl
+ *  for the subject shortcuts because Chrome and most browsers swallow Cmd+1…9
+ *  (browser tab switching) even when focus is on the page. */
+export const MOD_KEY = IS_MAC ? '⌥' : 'Alt'
+
+/** Format a shortcut like "1" → "⌥1" / "Alt+1", or shorthand: "Z" → "⌥Z" / "Alt+Z". */
+export function fmtShortcut(...keys: string[]) {
+  const tail = keys.join('+')
+  return IS_MAC ? `${MOD_KEY}${tail}` : `${MOD_KEY}+${tail}`
+}
+
+/** True while the platform's primary modifier (⌘ on macOS, Ctrl elsewhere) is held down.
+ *  Used to surface shortcut hints on hover-able controls, a la Claude Desktop.
+ *  Module-level so the app shares one window listener and one snapshot; many
+ *  `useModifier` calls subscribe without re-attaching. */
+const metaModule: {
+  subscribe(cb: () => void): () => void
+  getSnapshot(): boolean
+} = (() => {
+  let down = false
+  const listeners = new Set<() => void>()
+  const notify = () => listeners.forEach((l) => l())
+  if (typeof window !== 'undefined') {
+    const onKey = (e: KeyboardEvent) => {
+      // Only the modifier key itself carries state; ignore every other keypress.
+      if (e.key !== 'Alt') return
+      // Auto-repeat fires keydown repeatedly for a held key — those repeats
+      // don't change state, so skip them to keep the snapshot stable.
+      if (e.type === 'keydown' && e.repeat) return
+      const next = e.type === 'keydown'
+      if (next !== down) {
+        down = next
+        notify()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('keyup', onKey)
+    // Alt-tabbing releases the key on the OS side without firing keyup to us; self-heal on focus loss.
+    window.addEventListener('blur', () => {
+      if (down) {
+        down = false
+        notify()
+      }
+    })
+  }
+  return {
+    subscribe(cb: () => void) {
+      listeners.add(cb)
+      return () => {
+        listeners.delete(cb)
+      }
+    },
+    getSnapshot: () => down,
+  }
+})()
+
+export function useModifier() {
+  return useSyncExternalStore(metaModule.subscribe, metaModule.getSnapshot, metaModule.getSnapshot)
+}
+
 export type ThemeChoice = 'light' | 'dark' | 'system'
+
+/**
+ * Switch theme as one coordinated change. Without this, every element with
+ * its own colour transition (buttons, segmented pills, sliders) fades at its
+ * own speed while the rest snaps, which reads as a random stagger. Per-element
+ * transitions are frozen for the swap and the whole page crossfades once via
+ * a View Transition; without support (or with reduced motion) it's instant.
+ */
+function swapTheme(next: string) {
+  const root = document.documentElement
+  if (root.dataset.theme === next) return
+  root.classList.add('theme-swap')
+  const release = () =>
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-swap')))
+  const commit = () => {
+    root.dataset.theme = next
+  }
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (!reduced && typeof document.startViewTransition === 'function') {
+    document.startViewTransition(commit).finished.finally(release)
+  } else {
+    commit()
+    release()
+  }
+}
 
 export function useTheme() {
   const [choice, setChoice] = useState<ThemeChoice>(() => {
@@ -124,7 +257,7 @@ export function useTheme() {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const apply = () => {
       const resolved = choice === 'system' ? (mq.matches ? 'dark' : 'light') : choice
-      document.documentElement.dataset.theme = resolved
+      swapTheme(resolved)
     }
     apply()
     try {

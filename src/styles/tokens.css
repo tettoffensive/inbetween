@@ -12,7 +12,7 @@
   --k-accent-h: 275;
   --k-accent-c: 0.11;
   --k-accent-l: 0.56;
-  --k-neutral-h: 85;
+  --k-neutral-h: 78;
   --k-neutral-c: 0.004;
   --k-ink-h: 270;
   --k-contrast: 1;
@@ -21,7 +21,7 @@
   --k-soft: 1;
   --k-highlight: 1;
   --k-gradient: 1;
-  --k-radius: 1;
+  --k-radius: 0.6;
 
   /* ---- Fixed ---- */
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
@@ -63,7 +63,12 @@
 
   --text: oklch(0.23 0.012 var(--k-ink-h));
   --text-2: oklch(0.47 0.012 var(--k-ink-h));
-  --text-3: oklch(0.62 0.01 var(--k-ink-h));
+  --text-3: oklch(0.55 0.01 var(--k-ink-h));
+  /* Idle preset mini-curves: quieter than text so the selected one stands out. */
+  --preset-curve: oklch(0.7 0.01 var(--k-ink-h));
+  /* Toggle switch off track; --knob is the grab handle of switches and sliders. */
+  --switch-track: var(--well);
+  --knob: linear-gradient(180deg, var(--surface), var(--surface-hover));
 
   --accent: oklch(var(--k-accent-l) var(--k-accent-c) var(--k-accent-h));
   --accent-strong: oklch(calc(var(--k-accent-l) - 0.08) calc(var(--k-accent-c) * 1.1) var(--k-accent-h));
@@ -119,7 +124,11 @@
 
   --text: oklch(0.95 0.004 var(--k-ink-h));
   --text-2: oklch(0.72 0.008 var(--k-ink-h));
-  --text-3: oklch(0.55 0.008 var(--k-ink-h));
+  --text-3: oklch(0.63 0.008 var(--k-ink-h));
+  --preset-curve: var(--text-3);
+  /* A surface-coloured knob vanishes on a dark track; use light ink instead. */
+  --switch-track: oklch(1 0 0 / 0.1);
+  --knob: linear-gradient(180deg, oklch(0.9 0.004 var(--k-ink-h)), oklch(0.8 0.006 var(--k-ink-h)));
 
   --accent: oklch(calc(var(--k-accent-l) + 0.16) calc(var(--k-accent-c) * 0.9) var(--k-accent-h));
   --accent-strong: oklch(calc(var(--k-accent-l) + 0.24) calc(var(--k-accent-c) * 0.8) var(--k-accent-h));

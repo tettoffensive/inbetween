@@ -1,26 +1,31 @@
 import { memo, useEffect, useRef, type Dispatch } from 'react'
-import { Slider, ToggleGroup } from 'radix-ui'
-import { DrawingPinFilledIcon, DrawingPinIcon } from '@radix-ui/react-icons'
-import { PRESETS, nudge, type Curve, type Nudge } from '../lib/bezier'
+import { Slider, ToggleGroup, Tooltip } from 'radix-ui'
+import { PRESETS, format, nudge, sameCurve, type Curve, type Nudge } from '../lib/bezier'
 import { presetName, type Action } from '../lib/useEditor'
+import { Tip } from './Tip'
 import styles from './Controls.module.css'
 
 export const ShapePanel = memo(function ShapePanel({
   curve,
-  reference,
   dispatch,
+  onPreview,
 }: {
   curve: Curve
-  reference: Curve | null
   dispatch: Dispatch<Action>
+  /** Which nudge is hovered/focused, so the editor can preview its result. */
+  onPreview: (kind: Nudge | null) => void
 }) {
   const active = presetName(curve)
 
   return (
     <aside className={`card ${styles.panel}`} aria-label="Shape" style={{ gridArea: 'shape' }}>
-      <Section title="Feel" info="Nudges reshape whatever curve is current, including imported ones.">
-        <NudgeRow label="Start" curve={curve} dispatch={dispatch} less="start-gentler" more="start-snappier" lessLabel="Gentler" moreLabel="Snappier" />
-        <NudgeRow label="Landing" curve={curve} dispatch={dispatch} less="land-softer" more="land-firmer" lessLabel="Softer" moreLabel="Firmer" />
+      <Section
+        title="Feel"
+        info="Nudges reshape whatever curve is current. Duration stays fixed, so slowing one end speeds up the middle."
+      >
+        <NudgeRow label="Overall" curve={curve} dispatch={dispatch} onPreview={onPreview} less="gentler" more="snappier" lessLabel="Gentler" moreLabel="Snappier" />
+        <NudgeRow label="Start" curve={curve} dispatch={dispatch} onPreview={onPreview} less="start-slower" more="start-quicker" lessLabel="Slower" moreLabel="Quicker" />
+        <NudgeRow label="Landing" curve={curve} dispatch={dispatch} onPreview={onPreview} less="land-softer" more="land-firmer" lessLabel="Softer" moreLabel="Firmer" />
       </Section>
 
       <Section title="Presets">
@@ -30,28 +35,29 @@ export const ShapePanel = memo(function ShapePanel({
           value={active ?? ''}
           onValueChange={(name) => {
             const p = PRESETS.find((p) => p.name === name)
-            if (p) dispatch({ type: 'commit', curve: p.curve, source: 'preset' })
+            if (p) dispatch({ type: 'commit', curve: p.curve, source: 'preset', duration: p.duration })
           }}
           aria-label="Presets"
         >
           {PRESETS.map((p) => (
-            <ToggleGroup.Item key={p.name} value={p.name} className={styles.preset}>
-              <MiniCurve curve={p.curve} />
-              {p.name}
-            </ToggleGroup.Item>
+            <Tooltip.Root key={p.name}>
+              <Tooltip.Trigger asChild>
+                <ToggleGroup.Item value={p.name} className={styles.preset}>
+                  <MiniCurve curve={p.curve} />
+                  {p.name}
+                </ToggleGroup.Item>
+              </Tooltip.Trigger>
+              <Tooltip.Portal>
+                <Tooltip.Content className="tooltip" side="top" sideOffset={6} collisionPadding={8}>
+                  <p className={styles.tipUse}>{p.use}</p>
+                  <p className={`${styles.tipMeta} tnum`}>
+                    {p.duration}ms · {format(p.curve)}
+                  </p>
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
           ))}
         </ToggleGroup.Root>
-      </Section>
-
-      <Section title="Compare">
-        <button
-          className="btn"
-          data-pressed={!!reference || undefined}
-          onClick={() => dispatch({ type: reference ? 'unpin' : 'pin' })}
-        >
-          {reference ? <DrawingPinFilledIcon /> : <DrawingPinIcon />}
-          {reference ? 'Clear reference' : 'Pin as reference'}
-        </button>
       </Section>
     </aside>
   )
@@ -93,9 +99,13 @@ function Section({
   return (
     <section className={styles.section}>
       <header className={styles.sectionHead}>
-        <h3 className="eyebrow" title={info}>
-          {title}
-        </h3>
+        {info ? (
+          <Tip label={info} side="right">
+            <h3 className="eyebrow">{title}</h3>
+          </Tip>
+        ) : (
+          <h3 className="eyebrow">{title}</h3>
+        )}
         {aside && <span className={styles.aside}>{aside}</span>}
       </header>
       {children}
@@ -108,6 +118,7 @@ function NudgeRow(props: {
   label: string
   curve: Curve
   dispatch: Dispatch<Action>
+  onPreview: (kind: Nudge | null) => void
   less: Nudge
   more: Nudge
   lessLabel: string
@@ -129,6 +140,8 @@ function NudgeRow(props: {
     props.dispatch({ type: 'checkpoint' })
     const step = () => {
       const next = nudge(curveRef.current, kind)
+      // At the limit: stop repeating (a disabled button may never see pointerup).
+      if (sameCurve(next, curveRef.current)) return stop()
       curveRef.current = next
       props.dispatch({ type: 'update', curve: next, source: 'custom' })
     }
@@ -143,11 +156,23 @@ function NudgeRow(props: {
     <button
       className={`btn ${styles.nudge}`}
       data-side={side}
+      // Nothing left to nudge in this direction.
+      disabled={sameCurve(nudge(props.curve, kind), props.curve)}
       onPointerDown={(e) => {
         if (e.button === 0) press(kind)
       }}
       onPointerUp={stop}
-      onPointerLeave={stop}
+      onPointerEnter={(e) => {
+        if (e.pointerType === 'mouse') props.onPreview(kind)
+      }}
+      onPointerLeave={() => {
+        stop()
+        props.onPreview(null)
+      }}
+      onFocus={(e) => {
+        if (e.currentTarget.matches(':focus-visible')) props.onPreview(kind)
+      }}
+      onBlur={() => props.onPreview(null)}
       onKeyDown={(e) => {
         if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
           e.preventDefault()
@@ -175,8 +200,9 @@ function NudgeRow(props: {
 
 function MiniCurve({ curve: [x1, y1, x2, y2] }: { curve: Curve }) {
   return (
+    // Square, like the editor, left-aligned with the label.
     <svg viewBox="-0.1 -0.1 1.2 1.2" className={styles.mini} aria-hidden>
-      <path d={`M0 1 C${x1} ${1 - y1} ${x2} ${1 - y2} 1 0`} />
+      <path d={`M0 1 C${x1} ${1 - y1} ${x2} ${1 - y2} 1 0`} vectorEffect="non-scaling-stroke" />
     </svg>
   )
 }

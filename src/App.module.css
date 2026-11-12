@@ -1,8 +1,7 @@
 .app {
   max-width: 1360px;
   margin: 0 auto;
-  /* Room for the pinned output bar. */
-  padding: 16px 24px 96px;
+  padding: 16px 24px 32px;
   min-height: 100dvh;
 }
 
@@ -55,19 +54,10 @@
   background: var(--border);
 }
 
-.source {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
+.tagline {
   font-size: 13px;
-  font-weight: 500;
+  color: var(--text-2);
   white-space: nowrap;
-}
-
-.sourceKind {
-  font-size: 12px;
-  font-weight: 450;
-  color: var(--text-3);
 }
 
 .tools {
@@ -90,6 +80,14 @@
   align-items: start;
 }
 
+.curveColumn {
+  grid-area: curve;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
 @media (max-width: 1120px) {
   .main {
     --plot-size: 100%;
@@ -102,7 +100,7 @@
 
 @media (max-width: 860px) {
   .app {
-    padding: 8px 16px 96px;
+    padding: 8px 16px 24px;
   }
   .main {
     grid-template-columns: minmax(0, 1fr);
@@ -111,8 +109,26 @@
 }
 
 @media (max-width: 480px) {
-  .divider,
-  .source {
+  /* Tagline drops to its own line under the logo row. */
+  .header {
+    flex-wrap: wrap;
+    height: auto;
+    row-gap: 2px;
+    column-gap: 10px;
+    margin-bottom: 12px;
+  }
+  .brand {
+    display: contents;
+  }
+  .tools {
+    margin-left: auto;
+  }
+  .divider {
     display: none;
+  }
+  .tagline {
+    order: 3;
+    width: 100%;
+    font-size: 12px;
   }
 }

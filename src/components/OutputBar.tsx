@@ -1,16 +1,29 @@
 import { useEffect, useLayoutEffect, useRef, useState, type Dispatch, type KeyboardEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { CheckIcon, ClipboardIcon, CopyIcon } from '@radix-ui/react-icons'
+import { DropdownMenu } from 'radix-ui'
+import { CheckIcon, ChevronDownIcon, ClipboardIcon, CopyIcon } from '@radix-ui/react-icons'
 import { format, parse, parseDuration, type Curve } from '../lib/bezier'
-import type { Action } from '../lib/useEditor'
+import type { Action, Subject } from '../lib/useEditor'
+import { FORMATS, loadFormat, saveFormat, type ExportFormat } from '../lib/exportFormats'
 import { nudgeNumberAt } from '../lib/nudgeNumber'
+import { Tip } from './Tip'
 import styles from './OutputBar.module.css'
 
 /**
  * Pinned output: the CSS that reproduces the motion. The same field is the
  * import: click it (or paste anywhere) to replace the motion with pasted CSS.
  */
-export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatch<Action> }) {
+export function OutputBar({
+  curve,
+  duration,
+  subject,
+  dispatch,
+}: {
+  curve: Curve
+  duration: number
+  subject: Subject
+  dispatch: Dispatch<Action>
+}) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -18,6 +31,13 @@ export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatc
   const inputRef = useRef<HTMLInputElement>(null)
   // Just the timing function: it drops into any transition or animation.
   const css = format(curve)
+  // What Copy puts on the clipboard; remembered across visits.
+  const [fmt, setFmt] = useState<ExportFormat>(loadFormat)
+  const ctx = { curve, duration, subject }
+  const current = FORMATS.find((f) => f.id === fmt)!
+  // What the field shows and Copy copies.
+  const output = current.render(ctx)
+  const codeRef = useOverflowFade(output, editing, fmt)
 
   const apply = (text: string) => {
     const r = parse(text)
@@ -94,7 +114,7 @@ export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatc
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(css)
+      await navigator.clipboard.writeText(output)
     } catch {
       /* clipboard blocked; still show state so the demo reads */
     }
@@ -121,7 +141,37 @@ export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatc
       </AnimatePresence>
 
       <div className={styles.bar} data-invalid={!!error || undefined}>
-        <span className={styles.tag}>Easing</span>
+        {/* Format chip: picks what the field shows and what Copy copies. */}
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger className={styles.chip} aria-label={`Format: ${current.label}`}>
+            {current.label}
+            <ChevronDownIcon />
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className="menu" align="start" side="top" sideOffset={8} collisionPadding={8}>
+              <DropdownMenu.Label className="menu-label">Format</DropdownMenu.Label>
+              <DropdownMenu.RadioGroup
+                value={fmt}
+                onValueChange={(v) => {
+                  const f = FORMATS.find((f) => f.id === v)!
+                  setFmt(f.id)
+                  saveFormat(f.id)
+                  setEditing(false)
+                  setError(null)
+                }}
+              >
+                {FORMATS.map((f) => (
+                  <DropdownMenu.RadioItem key={f.id} value={f.id} className="menu-item">
+                    <DropdownMenu.ItemIndicator className="menu-indicator">
+                      <CheckIcon />
+                    </DropdownMenu.ItemIndicator>
+                    {f.label}
+                  </DropdownMenu.RadioItem>
+                ))}
+              </DropdownMenu.RadioGroup>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
 
         {editing ? (
           <form
@@ -161,21 +211,27 @@ export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatc
               }}
             />
           </form>
+        ) : fmt === 'css' ? (
+          <Tip label="Click to edit · ↑↓ nudges the number at the cursor">
+            <button ref={codeRef as React.RefObject<HTMLButtonElement>} className={styles.code} onClick={() => startEditing()}>
+              <span className={styles.fn}>{css}</span>
+            </button>
+          </Tip>
         ) : (
-          <button className={styles.code} onClick={() => startEditing()} title="Click to edit · ↑↓ nudges the number at the cursor · paste anywhere to import">
-            <span className={styles.fn}>{css}</span>
-          </button>
+          // Other formats are output only: a click selects the text.
+          <Tip label="Switch to CSS to edit">
+            <div ref={codeRef as React.RefObject<HTMLDivElement>} className={`${styles.code} ${styles.readonly}`}>
+              <span className={styles.fn}>{output}</span>
+            </div>
+          </Tip>
         )}
 
-        <button
-          className={`btn btn-ghost ${styles.paste}`}
-          onClick={() => startEditing('')}
-          aria-label="Paste CSS to import"
-          title="Paste CSS to import (or ⌘V anywhere)"
-        >
-          <ClipboardIcon /> <span className={styles.copyText}>Paste</span>
-        </button>
-        <button className={`btn btn-primary ${styles.copy}`} onClick={copy} aria-live="polite" aria-label="Copy CSS">
+        <Tip label="Paste CSS to import" shortcut="⌘V">
+          <button className={`btn btn-ghost ${styles.paste}`} onClick={() => startEditing('')} aria-label="Paste CSS to import">
+            <ClipboardIcon /> <span className={styles.pasteText}>Paste</span>
+          </button>
+        </Tip>
+        <button className={`btn btn-primary ${styles.copy}`} onClick={copy} aria-live="polite" aria-label={`Copy ${current.label}`}>
           <span className={styles.copyLayer}>
             <CopyIcon /> <span className={styles.copyText}>Copy</span>
           </span>
@@ -186,4 +242,26 @@ export function OutputBar({ curve, dispatch }: { curve: Curve; dispatch: Dispatc
       </div>
     </div>
   )
+}
+
+/**
+ * Sets `data-overflow` on the field while text runs past its right edge, so
+ * the fade shows only when there's more to scroll to.
+ */
+function useOverflowFade(...deps: unknown[]) {
+  const ref = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const update = () => el.toggleAttribute('data-overflow', el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', update)
+      ro.disconnect()
+    }
+  }, deps) // eslint-disable-line react-hooks/exhaustive-deps
+  return ref
 }

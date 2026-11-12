@@ -161,3 +161,138 @@ p {
     transition-duration: 0ms !important;
   }
 }
+
+/* Menus (dropdown + context). Floating tier; they grow from their trigger. */
+.menu {
+  z-index: 50;
+  min-width: 200px;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-floating);
+  font-size: 13px;
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin, var(--radix-context-menu-content-transform-origin));
+}
+
+.menu[data-state='open'] {
+  animation: menu-in 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.menu[data-state='closed'] {
+  animation: menu-out 100ms ease-out forwards;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes menu-out {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+.menu-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 4px 8px 4px 28px;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  outline: none;
+  cursor: default;
+  user-select: none;
+}
+
+.menu-item[data-highlighted] {
+  background: var(--well);
+}
+
+.menu-item[data-disabled] {
+  color: var(--text-3);
+}
+
+/* Check or icon slot on the left, so labels align with or without one. */
+.menu-indicator {
+  position: absolute;
+  left: 8px;
+  display: inline-flex;
+  color: var(--accent-strong);
+}
+
+.menu-shortcut {
+  margin-left: auto;
+  padding-left: 16px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 4px -4px;
+  background: var(--border-soft);
+}
+
+.menu-label {
+  padding: 6px 8px 4px 28px;
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Tooltips: the first one waits and fades in; moving to a neighbour while one
+   is open shows it instantly, with no animation (Radix's instant-open). */
+.tooltip {
+  z-index: 50;
+  max-width: 340px;
+  pointer-events: none;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-floating);
+  font-size: 12px;
+  color: var(--text-2);
+  transform-origin: var(--radix-tooltip-content-transform-origin);
+}
+
+.tooltip-kbd {
+  margin-left: 8px;
+  font-family: inherit;
+  color: var(--text-3);
+}
+
+.tooltip[data-state='delayed-open'] {
+  animation: menu-in 125ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu[data-state],
+  .tooltip[data-state] {
+    animation: none;
+  }
+}
+
+/* Theme swap: freeze per-element colour transitions so nothing lags behind,
+   and crossfade the whole page once instead (see swapTheme in hooks.ts). */
+.theme-swap,
+.theme-swap *,
+.theme-swap *::before,
+.theme-swap *::after {
+  transition: none !important;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+}

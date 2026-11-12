@@ -111,17 +111,30 @@ export function parseDuration(input: string): number | null {
   return Math.round(Math.min(1500, Math.max(100, ms)) / 10) * 10
 }
 
-/** Deterministic feel nudges. Each moves one handle; works on any curve. */
-export type Nudge = 'start-gentler' | 'start-snappier' | 'land-softer' | 'land-firmer'
-const STEP = 0.06
+/**
+ * Deterministic feel nudges; work on any curve. Start/landing move one handle.
+ * Overall scales both handles' distance from the linear diagonal: gentler
+ * lowers the top speed, snappier raises it, and the curve keeps its shape.
+ */
+export type Nudge = 'gentler' | 'snappier' | 'start-slower' | 'start-quicker' | 'land-softer' | 'land-firmer'
+const STEP = 0.08
+/** Per-press scale of the handles' offset from linear for overall nudges. */
+const OVERALL = 0.85
 
 export function nudge([x1, y1, x2, y2]: Curve, kind: Nudge): Curve {
   // Keep nudges inside the unit square; they never introduce overshoot.
   const u = (v: number) => Math.min(1, Math.max(0, v))
+  // Linear's own handles, at the thirds of the diagonal.
+  const toward = (v: number, base: number, k: number) => u(base + (v - base) * k)
   switch (kind) {
-    case 'start-snappier': // steeper departure: first handle up and left
+    case 'gentler':
+    case 'snappier': {
+      const k = kind === 'gentler' ? OVERALL : 1 / OVERALL
+      return clampCurve([toward(x1, 1 / 3, k), toward(y1, 1 / 3, k), toward(x2, 2 / 3, k), toward(y2, 2 / 3, k)])
+    }
+    case 'start-quicker': // steeper departure: first handle up and left
       return clampCurve([u(x1 - STEP), u(y1 + STEP), x2, y2])
-    case 'start-gentler': // ease in: first handle down and right
+    case 'start-slower': // ease in: first handle down and right
       return clampCurve([u(x1 + STEP), u(y1 - STEP), x2, y2])
     case 'land-softer': // ease out: second handle up and left
       return clampCurve([x1, y1, u(x2 - STEP), u(y2 + STEP)])
@@ -130,11 +143,40 @@ export function nudge([x1, y1, x2, y2]: Curve, kind: Nudge): Curve {
   }
 }
 
-export const PRESETS: { name: string; curve: Curve }[] = [
-  { name: 'Arrive', curve: [0.16, 1, 0.3, 1] },
-  { name: 'Snappy', curve: [0.2, 0.9, 0.1, 1] },
-  { name: 'Gentle', curve: [0.4, 0, 0.2, 1] },
-  { name: 'In-out', curve: [0.65, 0, 0.35, 1] },
-  { name: 'Depart', curve: [0.55, 0, 1, 0.45] },
-  { name: 'Linear', curve: [0, 0, 1, 1] },
+/**
+ * The enter-leg time whose position matches an exit-leg moment: the exit leg
+ * shows 1 - p(t), so find t' with p(t') = 1 - p(t). Nearest of 240 samples,
+ * which handles overshooting curves and stays under a pixel at preview sizes.
+ */
+export function enterTimeFor(curve: Curve, t: number): number {
+  const target = 1 - solve(curve, t)
+  let best = 0
+  let bestD = Infinity
+  for (let i = 0; i <= 240; i++) {
+    const u = i / 240
+    const d = Math.abs(solve(curve, u) - target)
+    if (d < bestD) {
+      bestD = d
+      best = u
+    }
+  }
+  return best
+}
+
+/**
+ * Time-reversed curve: an ease-out becomes the matching ease-in (and back).
+ * Rotating the handles 180° around the centre plays the motion backwards.
+ */
+export function reverse([x1, y1, x2, y2]: Curve): Curve {
+  return clampCurve([1 - x2, 1 - y2, 1 - x1, 1 - y1])
+}
+
+/** Named by when to use them; each suggests a duration. */
+export const PRESETS: { name: string; curve: Curve; duration: number; use: string }[] = [
+  { name: 'Enter/exit', curve: [0.23, 1, 0.32, 1], duration: 300, use: 'Strong ease-out: things appearing or leaving' },
+  { name: 'Drawer', curve: [0.32, 0.72, 0, 1], duration: 500, use: 'Sheets and panels sliding in' },
+  { name: 'Move', curve: [0.77, 0, 0.175, 1], duration: 250, use: 'Strong ease-in-out: moving on screen' },
+  { name: 'Resize', curve: [0.25, 1, 0.5, 1], duration: 270, use: 'A container changing size' },
+  { name: 'Fade', curve: [0.26, 0.08, 0.25, 1], duration: 200, use: 'Content crossfading inside a container' },
+  { name: 'Linear', curve: [0, 0, 1, 1], duration: 600, use: 'Constant speed: hold-to-confirm, progress' },
 ]

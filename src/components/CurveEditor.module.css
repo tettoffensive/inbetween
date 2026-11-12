@@ -77,6 +77,15 @@
   stroke-dasharray: 5 4;
 }
 
+.preview {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 3;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
 .ghost {
   fill: none;
   stroke: var(--accent);
@@ -140,6 +149,14 @@
   transition:
     transform var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.handle::before {
+  /* 44px touch target around the 18px dot. */
+  content: '';
+  position: absolute;
+  inset: -13px;
+  border-radius: 50%;
 }
 
 .handle::after {

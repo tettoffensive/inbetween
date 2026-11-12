@@ -1,5 +1,7 @@
 import { useId, useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react'
 import { motion } from 'motion/react'
+import { ContextMenu } from 'radix-ui'
+import { CopyIcon, DrawingPinFilledIcon, DrawingPinIcon, LoopIcon, ResetIcon } from '@radix-ui/react-icons'
 import { clampCurve, frameCount, sample, solve, type Curve, type TickRate } from '../lib/bezier'
 import styles from './CurveEditor.module.css'
 
@@ -21,12 +23,14 @@ export function CurveEditor({
   ghost,
   changeId,
   reference,
+  preview,
   t,
   duration,
   tickRate,
   onDragStart,
   onDrag,
   onDragEnd,
+  actions,
 }: {
   /** Committed curve (handle positions while dragging). */
   curve: Curve
@@ -35,12 +39,16 @@ export function CurveEditor({
   ghost: Curve | null
   changeId: number
   reference: Curve | null
+  /** Where the hovered Feel nudge would put the curve. */
+  preview: Curve | null
   t: number
   duration: number
   tickRate: TickRate
   onDragStart: () => void
   onDrag: (c: Curve) => void
   onDragEnd: () => void
+  /** Right-click menu on the plot. */
+  actions: CurveActions
 }) {
   const boxRef = useRef<HTMLDivElement>(null)
   const dotsId = `dots-${useId().replace(/:/g, '')}`
@@ -89,7 +97,7 @@ export function CurveEditor({
   const [x1, y1, x2, y2] = shown
 
   return (
-    <section className={`card ${styles.editor}`} aria-label="Curve" style={{ gridArea: 'curve' }}>
+    <section className={`card ${styles.editor}`} aria-label="Curve">
       <header className={styles.head}>
         <h2 className="eyebrow">Curve</h2>
         <p className={`${styles.readout} tnum`}>
@@ -102,89 +110,146 @@ export function CurveEditor({
         </p>
       </header>
 
-      <div className={styles.plotWrap}>
-        <div className={`well ${styles.plot}`} ref={boxRef}>
-          <svg viewBox={`${-PAD} ${-PAD} ${SPAN} ${SPAN}`} className={styles.svg} aria-hidden>
-            {/* Dot grid in plot units: one dot every 1/16, landing on the 0 and 1
-                edges, fading out toward the edges of the plot. */}
-            <defs>
-              <pattern id={`${dotsId}-p`} width={DOT_STEP} height={DOT_STEP} patternUnits="userSpaceOnUse" x={-DOT_STEP / 2} y={-DOT_STEP / 2}>
-                <circle cx={DOT_STEP / 2} cy={DOT_STEP / 2} r={0.0034} className={styles.dot} />
-              </pattern>
-              <radialGradient id={`${dotsId}-g`} cx="50%" cy="50%" r="60%">
-                <stop offset="55%" stopColor="#fff" />
-                <stop offset="100%" stopColor="#fff" stopOpacity={0} />
-              </radialGradient>
-              <mask id={`${dotsId}-m`}>
-                <rect x={-PAD} y={-PAD} width={SPAN} height={SPAN} fill={`url(#${dotsId}-g)`} />
-              </mask>
-            </defs>
-            <rect x={0} y={0} width={1} height={1} className={styles.frame} />
-            <rect
-              x={-PAD}
-              y={-PAD}
-              width={SPAN}
-              height={SPAN}
-              fill={`url(#${dotsId}-p)`}
-              mask={`url(#${dotsId}-m)`}
-            />
-            <line x1={0} y1={1} x2={1} y2={0} className={styles.diagonal} />
+      <ContextMenu.Root>
+        <ContextMenu.Trigger asChild>
+          <div className={styles.plotWrap}>
+            <div className={`well ${styles.plot}`} ref={boxRef}>
+              <svg viewBox={`${-PAD} ${-PAD} ${SPAN} ${SPAN}`} className={styles.svg} aria-hidden>
+                {/* Dot grid in plot units: one dot every 1/16, landing on the 0 and 1
+                    edges, fading out toward the edges of the plot. */}
+                <defs>
+                  <pattern id={`${dotsId}-p`} width={DOT_STEP} height={DOT_STEP} patternUnits="userSpaceOnUse" x={-DOT_STEP / 2} y={-DOT_STEP / 2}>
+                    <circle cx={DOT_STEP / 2} cy={DOT_STEP / 2} r={0.0034} className={styles.dot} />
+                  </pattern>
+                  <radialGradient id={`${dotsId}-g`} cx="50%" cy="50%" r="60%">
+                    <stop offset="55%" stopColor="#fff" />
+                    <stop offset="100%" stopColor="#fff" stopOpacity={0} />
+                  </radialGradient>
+                  <mask id={`${dotsId}-m`}>
+                    <rect x={-PAD} y={-PAD} width={SPAN} height={SPAN} fill={`url(#${dotsId}-g)`} />
+                  </mask>
+                </defs>
+                <rect x={0} y={0} width={1} height={1} className={styles.frame} />
+                <rect
+                  x={-PAD}
+                  y={-PAD}
+                  width={SPAN}
+                  height={SPAN}
+                  fill={`url(#${dotsId}-p)`}
+                  mask={`url(#${dotsId}-m)`}
+                />
+                <line x1={0} y1={1} x2={1} y2={0} className={styles.diagonal} />
 
-            {reference && <path d={pathFor(reference)} className={styles.reference} />}
+                {reference && <path d={pathFor(reference)} className={styles.reference} />}
+                {preview && <path d={pathFor(preview)} className={styles.preview} />}
 
-            {ghost && (
-              <motion.path
-                key={changeId}
-                d={pathFor(ghost)}
-                className={styles.ghost}
-                initial={{ opacity: 0.6 }}
-                animate={{ opacity: 0 }}
-                transition={{ duration: 0.9, ease: [0.4, 0, 0.2, 1], delay: 0.15 }}
+                {ghost && (
+                  <motion.path
+                    key={changeId}
+                    d={pathFor(ghost)}
+                    className={styles.ghost}
+                    initial={{ opacity: 0.6 }}
+                    animate={{ opacity: 0 }}
+                    transition={{ duration: 0.9, ease: [0.4, 0, 0.2, 1], delay: 0.15 }}
+                  />
+                )}
+
+                <line x1={0} y1={sy(0)} x2={x1} y2={sy(y1)} className={styles.arm} />
+                <line x1={1} y1={sy(1)} x2={x2} y2={sy(y2)} className={styles.arm} />
+
+                <path d={pathFor(shown)} className={styles.curve} />
+
+                {/* Spacing projected onto the progress axis: each frame's height.
+                    Equal-time ticks below, resulting spacing on the left. */}
+                {samples.map((v, i) => (
+                  <line
+                    key={i}
+                    x1={-0.05}
+                    x2={-0.012}
+                    y1={sy(v)}
+                    y2={sy(v)}
+                    className={styles.spacing}
+                    data-active={i === Math.round(t * intervals) || undefined}
+                  />
+                ))}
+
+                {/* playhead */}
+                <line x1={t} x2={t} y1={-PAD} y2={1 + PAD} className={styles.playhead} />
+                <line x1={-PAD} x2={t} y1={sy(y)} y2={sy(y)} className={styles.playheadH} />
+                <circle cx={t} cy={sy(y)} r={0.018} className={styles.playDot} />
+              </svg>
+
+              <button
+                className={styles.handle}
+                style={{ left: pct(x1), top: pct(1 - y1) }}
+                aria-label={`Start handle, ${fmt(curve[0])}, ${fmt(curve[1])}. Arrow keys to move.`}
+                {...handleProps(0)}
               />
-            )}
-
-            <line x1={0} y1={sy(0)} x2={x1} y2={sy(y1)} className={styles.arm} />
-            <line x1={1} y1={sy(1)} x2={x2} y2={sy(y2)} className={styles.arm} />
-
-            <path d={pathFor(shown)} className={styles.curve} />
-
-            {/* Spacing projected onto the progress axis: each frame's height.
-                Equal-time ticks below, resulting spacing on the left. */}
-            {samples.map((v, i) => (
-              <line
-                key={i}
-                x1={-0.05}
-                x2={-0.012}
-                y1={sy(v)}
-                y2={sy(v)}
-                className={styles.spacing}
-                data-active={i === Math.round(t * intervals) || undefined}
+              <button
+                className={styles.handle}
+                style={{ left: pct(x2), top: pct(1 - y2) }}
+                aria-label={`Landing handle, ${fmt(curve[2])}, ${fmt(curve[3])}. Arrow keys to move.`}
+                {...handleProps(1)}
               />
-            ))}
 
-            {/* playhead */}
-            <line x1={t} x2={t} y1={-PAD} y2={1 + PAD} className={styles.playhead} />
-            <line x1={-PAD} x2={t} y1={sy(y)} y2={sy(y)} className={styles.playheadH} />
-            <circle cx={t} cy={sy(y)} r={0.018} className={styles.playDot} />
-          </svg>
-
-          <button
-            className={styles.handle}
-            style={{ left: pct(x1), top: pct(1 - y1) }}
-            aria-label={`Start handle, ${fmt(curve[0])}, ${fmt(curve[1])}. Arrow keys to move.`}
-            {...handleProps(0)}
-          />
-          <button
-            className={styles.handle}
-            style={{ left: pct(x2), top: pct(1 - y2) }}
-            aria-label={`Landing handle, ${fmt(curve[2])}, ${fmt(curve[3])}. Arrow keys to move.`}
-            {...handleProps(1)}
-          />
-
-        </div>
-      </div>
+            </div>
+          </div>
+        </ContextMenu.Trigger>
+        <CurveMenu {...actions} />
+      </ContextMenu.Root>
     </section>
   )
 }
 
 const fmt = (n: number) => n.toFixed(2)
+
+export type CurveActions = {
+  pinned: boolean
+  canUndo: boolean
+  canRedo: boolean
+  onReverse: () => void
+  onTogglePin: () => void
+  onCopy: () => void
+  onUndo: () => void
+  onRedo: () => void
+}
+
+function CurveMenu(a: CurveActions) {
+  return (
+    <ContextMenu.Portal>
+      <ContextMenu.Content className="menu" collisionPadding={8}>
+        <ContextMenu.Item className="menu-item" onSelect={a.onReverse}>
+          <span className="menu-indicator">
+            <LoopIcon />
+          </span>
+          Reverse
+        </ContextMenu.Item>
+        <ContextMenu.Item className="menu-item" onSelect={a.onTogglePin}>
+          <span className="menu-indicator">{a.pinned ? <DrawingPinFilledIcon /> : <DrawingPinIcon />}</span>
+          {a.pinned ? 'Unpin reference' : 'Pin as reference'}
+        </ContextMenu.Item>
+        <ContextMenu.Item className="menu-item" onSelect={a.onCopy}>
+          <span className="menu-indicator">
+            <CopyIcon />
+          </span>
+          Copy cubic-bezier()
+        </ContextMenu.Item>
+        <ContextMenu.Separator className="menu-separator" />
+        <ContextMenu.Item className="menu-item" disabled={!a.canUndo} onSelect={a.onUndo}>
+          <span className="menu-indicator">
+            <ResetIcon />
+          </span>
+          Undo
+          <span className="menu-shortcut">⌘Z</span>
+        </ContextMenu.Item>
+        <ContextMenu.Item className="menu-item" disabled={!a.canRedo} onSelect={a.onRedo}>
+          <span className="menu-indicator">
+            <ResetIcon style={{ transform: 'scaleX(-1)' }} />
+          </span>
+          Redo
+          <span className="menu-shortcut">⇧⌘Z</span>
+        </ContextMenu.Item>
+      </ContextMenu.Content>
+    </ContextMenu.Portal>
+  )
+}

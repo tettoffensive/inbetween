@@ -12,7 +12,7 @@ import { Tuner } from './dev/Tuner.tsx'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MotionConfig reducedMotion="user">
-      <Tooltip.Provider delayDuration={400}>
+      <Tooltip.Provider delayDuration={500} skipDelayDuration={300} disableHoverableContent>
         <App />
         {import.meta.env.DEV && <Tuner />}
       </Tooltip.Provider>

@@ -35,7 +35,7 @@
 /* Feel nudges */
 .nudgeRow {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 56px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
 }
@@ -47,10 +47,13 @@
 
 .nudgePair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Equal halves on every row, so the pairs and their dividers line up. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .nudge {
+  padding-inline: 8px;
+  white-space: nowrap;
   touch-action: manipulation;
 }
 
@@ -105,7 +108,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: linear-gradient(180deg, var(--surface), var(--surface-hover));
+  background: var(--knob);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-control);
   transition: transform var(--dur-fast) var(--ease-out);
@@ -119,7 +122,7 @@
 /* Presets */
 .presets {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -152,7 +155,7 @@
   transform: scale(0.97);
 }
 
-.preset[data-state='on'] {
+.preset[aria-checked='true'] {
   background: var(--surface);
   border-color: var(--border);
   box-shadow: 0 0 0 1px var(--accent-ring);
@@ -160,17 +163,31 @@
 }
 
 .mini {
-  width: 100%;
-  height: 18px;
+  width: 26px;
+  height: 26px;
+  margin-left: -2px;
 }
 
 .mini path {
   fill: none;
-  stroke: var(--text-3);
-  stroke-width: 0.08;
+  stroke: var(--preset-curve);
+  stroke-width: 1.5;
   stroke-linecap: round;
 }
 
-.preset[data-state='on'] .mini path {
+.preset[aria-checked='true'] .mini path {
   stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.tipUse {
+  color: var(--text);
+}
+
+.tipMeta {
+  margin-top: 2px;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
 }

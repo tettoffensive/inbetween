@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import { PRESETS, sameCurve, type Curve, type TickRate } from './bezier'
 
-export type Subject = 'x' | 'y' | 'scale' | 'fade' | 'rotate'
+export type Subject = 'x' | 'scale' | 'resize' | 'fade' | 'rotate'
 export type Source = 'preset' | 'custom' | 'imported'
 
 type Snapshot = { curve: Curve; source: Source }
@@ -23,7 +23,7 @@ export type EditorState = {
 }
 
 export type Action =
-  | { type: 'commit'; curve: Curve; source: Source }
+  | { type: 'commit'; curve: Curve; source: Source; duration?: number }
   /** Start of a held/repeated gesture: one history entry for the whole gesture. */
   | { type: 'checkpoint'; drag?: boolean }
   | { type: 'update'; curve: Curve; source: Source }
@@ -41,9 +41,12 @@ const LIMIT = 100
 function reducer(s: EditorState, a: Action): EditorState {
   switch (a.type) {
     case 'commit':
-      if (sameCurve(a.curve, s.present.curve) && a.source === s.present.source) return s
+      if (sameCurve(a.curve, s.present.curve) && a.source === s.present.source) {
+        return a.duration && a.duration !== s.duration ? { ...s, duration: a.duration } : s
+      }
       return {
         ...s,
+        duration: a.duration ?? s.duration,
         past: [...s.past, s.present].slice(-LIMIT),
         future: [],
         present: { curve: a.curve, source: a.source },
@@ -108,7 +111,7 @@ const initial: EditorState = {
   ghost: null,
   changeId: 0,
   dragging: false,
-  duration: 600,
+  duration: PRESETS[0].duration,
   subject: 'x',
   reference: null,
   tickRate: 24,

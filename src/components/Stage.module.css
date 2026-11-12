@@ -8,7 +8,45 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 12px 0;
+  /* Same 16px gutter as the lanes and settings. */
+  padding: 12px 16px 0;
+}
+
+/* Tabs span the card. */
+.bar > [role='radiogroup'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.bar > [role='radiogroup'] > button {
+  flex: 1 1 auto;
+}
+
+.pin {
+  height: 32px;
+  font-size: 12px;
+}
+
+.pin[aria-pressed='true'] {
+  color: var(--accent-strong);
+}
+
+/* Phones: six subject tabs in one row. */
+@media (max-width: 420px) {
+  .bar {
+    gap: 4px;
+    padding: 10px 16px 0;
+  }
+  .bar [role='radiogroup'] button[role='radio'] {
+    padding: 0 6px;
+  }
+}
+
+@media (max-width: 380px) {
+  .bar [role='radiogroup'] button[role='radio'] {
+    padding: 0 4px;
+    font-size: 12px;
+  }
 }
 
 
@@ -19,7 +57,12 @@
 
 .lane {
   position: relative;
-  padding: 20px 0 4px;
+  padding: 8px 0 4px;
+}
+
+/* Room for the Current/Reference label when comparing. */
+.lane[data-labelled] {
+  padding-top: 20px;
 }
 
 .laneLabel {
@@ -35,10 +78,10 @@
 
 .track {
   position: relative;
-  /* Tall enough for Move Y so switching subjects never changes layout. */
-  height: calc(52px + 64px + 4px);
+  /* Fits the tallest subject (a rotating square's diagonal, scale overshoot)
+     so switching subjects never changes layout. */
+  height: 96px;
   display: flex;
-
   align-items: center;
 }
 
@@ -148,14 +191,22 @@
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
-  column-gap: 16px;
-  row-gap: 6px;
-  padding: 4px 16px 14px;
+  /* Wide gap keeps the control column from stretching too far. */
+  column-gap: 40px;
+  row-gap: 8px;
+  padding: 4px 16px 16px;
 }
 
 /* Toggles hug the right edge, aligned with the duration value. */
-.settings > :nth-child(even):not(.durationControl) {
-  justify-self: end;
+/* One control column: every control starts and ends on the same edges. */
+.settings > :nth-child(even) {
+  justify-self: stretch;
+}
+
+.settings > [role='radiogroup'] {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
 }
 
 .label {
@@ -175,17 +226,120 @@
   flex: 1;
 }
 
-.durValue {
-  min-width: 44px;
-  text-align: right;
+/* Toggle switch: a well with a sliding thumb; the track fills with accent. */
+.settings > .switch {
+  justify-self: start;
+}
+
+.switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--switch-track);
+  box-shadow: var(--shadow-well);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast);
+}
+
+.switch[data-state='checked'] {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.switch:focus-visible {
+  outline: 2px solid var(--accent-ring);
+  outline-offset: 2px;
+}
+
+.switchThumb {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--knob);
+  box-shadow: var(--shadow-control);
+  transform: translateX(1px);
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.switch[data-state='checked'] .switchThumb {
+  transform: translateX(17px);
+}
+
+/* Onion-skin frames: outlines only, so the moving subject stays the focus. */
+.onion {
+  position: absolute;
+  left: 0;
+  border: 1px solid var(--accent);
+  border-radius: calc(14px * var(--k-radius));
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+.lane[data-reference] .onion {
+  border-color: var(--reference);
+}
+
+.durField {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  padding: 0 8px 0 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  background: var(--well);
+  box-shadow: var(--shadow-well);
   font-size: 12px;
+  cursor: text;
+  transition:
+    border-color var(--dur-fast),
+    box-shadow var(--dur-fast);
+}
+
+.durField:hover {
+  border-color: var(--border);
+}
+
+.durField:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-well), 0 0 0 3px var(--accent-soft);
+}
+
+.durInput {
+  width: 4ch;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  text-align: right;
   color: var(--text);
+}
+
+.durUnit {
+  color: var(--text-3);
 }
 
 .play {
   width: 36px;
   height: 36px;
   border-radius: 50%;
+}
+
+/* Stacks the outgoing and incoming icon in the same spot. */
+.iconStack {
+  display: grid;
+  place-items: center;
+}
+
+.iconStack > * {
+  grid-area: 1 / 1;
+  display: grid;
 }
 
 .scrub {
@@ -227,30 +381,17 @@
 
 .scrubThumb {
   display: block;
-  width: 14px;
-  height: 14px;
+  /* Same thumb as the Duration slider. */
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: linear-gradient(180deg, var(--surface), var(--surface-hover));
+  background: var(--knob);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-control), 0 0 0 3px var(--accent-soft);
+  box-shadow: var(--shadow-control);
   transition: transform var(--dur-fast) var(--ease-out);
 }
 
 .scrubThumb:hover {
-  transform: scale(1.15);
-}
-
-.elapsed {
-  min-width: 56px;
-  text-align: right;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-}
-
-.unit {
-  margin-left: 1px;
-  font-weight: 400;
-  color: var(--text-3);
+  transform: scale(1.12);
 }
 

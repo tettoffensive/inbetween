@@ -1,32 +1,26 @@
-# React + TypeScript + Vite
+# Inbetween
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Design CSS easing by feel.
 
-Currently, two official plugins are available:
+![Inbetween: curve editor, presets and live preview](docs/screenshot.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Inbetween is a small editor for `cubic-bezier()` timing functions. You can drag the curve handles, or nudge the feel with plain words like *Gentler*, *Quicker* and *Softer*. The preview plays the motion, and a spacing ruler shows where each frame lands, the way an animator spaces inbetweens. When it feels right, copy the CSS.
 
-## React Compiler
+- Six presets named for when to use them, each with a suggested duration
+- Feel nudges for the whole motion, the start and the landing, previewed on hover
+- Live preview of Move, Scale, Resize, Fade and Rotate, with a scrubber and slow-motion playback
+- Frame-spacing rulers at 12, 24 or 30 frames per second, plus an onion skin that outlines every frame
+- Pin a curve as a reference to compare against it
+- Output as CSS, a full `transition:` line, Tailwind, Motion or SwiftUI; the code line shows exactly what Copy copies
+- Right-click the curve to reverse it, pin it, copy it, or undo
+- Paste any `cubic-bezier()` to import it. The arrow keys nudge the number under the cursor.
+- Undo and redo (⌘Z / ⇧⌘Z), Space to play or pause, ← / → to step a frame, 0 to jump to frame 0, ⌥1–⌥5 to switch the preview, and light, dark or system theme
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Run
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+pnpm install
+pnpm dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Built with React, TypeScript, Vite and Motion.
