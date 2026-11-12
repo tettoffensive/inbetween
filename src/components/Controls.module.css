@@ -68,11 +68,37 @@
   border-left-width: 0;
 }
 
-.arrow {
-  color: var(--accent);
-  font-size: 15px;
-  line-height: 1;
-  transform: translateY(-1px);
+.nudge {
+  gap: 6px;
+}
+
+/* Pressing leans the button the way it pushes the curve. */
+.nudge[data-side='l']:active:not(:disabled) {
+  transform: translateX(-1px) scale(0.98);
+}
+
+.nudge[data-side='r']:active:not(:disabled) {
+  transform: translateX(1px) scale(0.98);
+}
+
+/* Where this nudge leads, drawn like the preset curves. */
+.glyph {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  overflow: visible;
+}
+
+.glyph path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+
+.glyph .glyphGhost {
+  stroke: var(--preset-curve);
+  stroke-width: 1.25;
 }
 
 /* Duration slider */

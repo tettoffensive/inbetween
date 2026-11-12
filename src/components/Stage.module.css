@@ -126,6 +126,7 @@
   border-radius: calc(14px * var(--k-radius));
 }
 
+
 /* Rotation needs an orientation mark to be readable on a square. */
 .subject[data-kind='rotate']::after {
   content: '';
@@ -279,6 +280,16 @@
   border-radius: calc(14px * var(--k-radius));
   opacity: 0.28;
   pointer-events: none;
+}
+
+/* App-icon squircle, matching the logo. A fixed px radius (34% of the 52px
+   subject) so Resize's growing width stretches the sides, not the corners. */
+@supports (corner-shape: squircle) {
+  .subject,
+  .onion {
+    border-radius: 18px;
+    corner-shape: squircle;
+  }
 }
 
 .lane[data-reference] .onion {

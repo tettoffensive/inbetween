@@ -44,7 +44,8 @@ export function useTweenedCurve(target: Curve, instant: boolean): Curve {
   return shown
 }
 
-const HOLD_MS = 500
+/** Rest at the end of each run before the next starts. */
+export const HOLD_MS = 500
 
 /**
  * Looping playback clock. Time always runs forward: t goes 0 → 1, holds,
@@ -69,6 +70,10 @@ export type ClockState = {
   waveT: number
   /** Completed runs. Odd runs play the opposite change (exit); rotation accumulates. */
   cycle: number
+  /** Ms spent in the end-of-run hold; 0 outside it (and whenever paused). */
+  held: number
+  /** Wall ms of one run while playing (duration / speed); 0 when paused. */
+  span: number
 }
 export type Clock = {
   get: () => ClockState
@@ -76,7 +81,7 @@ export type Clock = {
 }
 
 function createClock() {
-  let state: ClockState = { t: 0, waveT: 0, cycle: 0 }
+  let state: ClockState = { t: 0, waveT: 0, cycle: 0, held: 0, span: 0 }
   const subs = new Set<() => void>()
   return {
     get: () => state,
@@ -141,8 +146,14 @@ export function usePlayback(duration: number, speed: Speed = 1, toEnterTime?: (t
           const tt = map(tRef.current)
           tRef.current = tt
           cycleRef.current += 1
-          clock.set({ t: tt, waveT: tt, cycle: cycleRef.current })
+          clock.set({ t: tt, waveT: tt, cycle: cycleRef.current, held: 0, span: 0 })
         }
+      }
+      // Paused: drop the run's span (hides the playhead's run-off), and
+      // mid-hold settle at the end rather than freeze mid-fade.
+      if (!next) {
+        const s = clock.get()
+        clock.set(s.held > 0 ? { t: 1, waveT: 1, cycle: cycleRef.current, held: 0, span: 0 } : { ...s, span: 0 })
       }
       setPlayingState(next)
     },
@@ -173,6 +184,8 @@ export function usePlayback(duration: number, speed: Speed = 1, toEnterTime?: (t
         t: tRef.current,
         waveT: hold > 0 ? 1 + (HOLD_MS - hold) / span : tRef.current,
         cycle: cycleRef.current,
+        held: hold > 0 ? HOLD_MS - hold : 0,
+        span,
       })
       raf = requestAnimationFrame(tick)
     }
@@ -183,7 +196,7 @@ export function usePlayback(duration: number, speed: Speed = 1, toEnterTime?: (t
   const scrub = (value: number) => {
     setPlaying(false)
     tRef.current = value
-    clock.set({ t: value, waveT: value, cycle: cycleRef.current })
+    clock.set({ t: value, waveT: value, cycle: cycleRef.current, held: 0, span: 0 })
   }
   return { clock: clock as Clock, playing, setPlaying, scrub }
 }

@@ -114,7 +114,7 @@ function Section({
   )
 }
 
-function NudgeRow(props: {
+type NudgeRowProps = {
   label: string
   curve: Curve
   dispatch: Dispatch<Action>
@@ -123,7 +123,9 @@ function NudgeRow(props: {
   more: Nudge
   lessLabel: string
   moreLabel: string
-}) {
+}
+
+function NudgeRow(props: NudgeRowProps) {
   const { label, less, more, lessLabel, moreLabel } = props
   // Latest curve for repeated nudges while held.
   const curveRef = useRef(props.curve)
@@ -181,9 +183,9 @@ function NudgeRow(props: {
         }
       }}
     >
-      {side === 'l' && <span className={styles.arrow}>‹</span>}
+      {side === 'l' && <NudgeGlyph curve={props.curve} kind={kind} />}
       {text}
-      {side === 'r' && <span className={styles.arrow}>›</span>}
+      {side === 'r' && <NudgeGlyph curve={props.curve} kind={kind} />}
     </button>
   )
 
@@ -195,6 +197,32 @@ function NudgeRow(props: {
         {btn(more, moreLabel, 'r')}
       </div>
     </div>
+  )
+}
+
+const curvePath = ([x1, y1, x2, y2]: Curve) => `M0 1 C${x1} ${1 - y1} ${x2} ${1 - y2} 1 0`
+
+/** How far the glyph's curve must move from the current one to read at icon size. */
+const GLYPH_MIN_SHIFT = 0.3
+
+/**
+ * Where nudging this way leads: the current curve ghosted, with the curve a few
+ * presses on drawn over it. Steps until the change is legible, since one press
+ * barely moves a handle. At the limit only the ghost remains.
+ */
+function NudgeGlyph({ curve, kind }: { curve: Curve; kind: Nudge }) {
+  let next = curve
+  for (let i = 0; i < 12; i++) {
+    const n = nudge(next, kind)
+    if (sameCurve(n, next)) break
+    next = n
+    if (Math.max(...next.map((v, j) => Math.abs(v - curve[j]))) >= GLYPH_MIN_SHIFT) break
+  }
+  return (
+    <svg viewBox="-0.15 -0.15 1.3 1.3" className={styles.glyph} aria-hidden>
+      <path d={curvePath(curve)} className={styles.glyphGhost} vectorEffect="non-scaling-stroke" />
+      {!sameCurve(next, curve) && <path d={curvePath(next)} vectorEffect="non-scaling-stroke" />}
+    </svg>
   )
 }
 

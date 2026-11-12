@@ -3,7 +3,7 @@ import { motion } from 'motion/react'
 import { ContextMenu } from 'radix-ui'
 import { CopyIcon, DrawingPinFilledIcon, DrawingPinIcon, LoopIcon, ResetIcon } from '@radix-ui/react-icons'
 import { BEND_RANGE, bend, clampCurve, frameCount, nearestParam, pointAt, sample, solve, type Curve, type TickRate } from '../lib/bezier'
-import { useClock, type Clock } from '../hooks/hooks'
+import { HOLD_MS, useClock, type Clock } from '../hooks/hooks'
 import styles from './CurveEditor.module.css'
 
 // Plot space: x in [0,1] time, y in [-0.2, 1.2] progress. Square viewBox with margin.
@@ -221,9 +221,62 @@ export function CurveEditor({
 
 const fmt = (n: number) => n.toFixed(2)
 
+/** Caps the speed off a near-vertical tangent, which is infinitely fast. */
+const MAX_SLOPE = 6
+
+/** dy/dx of the line from a to b (x is time, so this is the dot's velocity), or null when they coincide. */
+function slope(ax: number, ay: number, bx: number, by: number) {
+  if (Math.hypot(bx - ax, by - ay) < 1e-3) return null
+  const dx = bx - ax
+  if (Math.abs(dx) < 1e-6) return Math.sign(by - ay) * MAX_SLOPE
+  return Math.max(-MAX_SLOPE, Math.min(MAX_SLOPE, (by - ay) / dx))
+}
+
+/**
+ * Visibility of a point past the curve's ends: full inside the unit box,
+ * gone at the plot's outer edge, an inverse-square-like (1 - d)² falloff,
+ * so it fades over the same ground however fast it moves.
+ */
+function falloff(x: number, y: number) {
+  const out = Math.max(-x, x - 1, -y, y - 1, 0) / PAD
+  const v = Math.max(0, 1 - out)
+  return v * v
+}
+
+/**
+ * While playing, the dot runs on past the end along the end tangent and comes
+ * in along the start tangent at the speed the curve moves there, as if the
+ * loop were one continuous track. Both are faded by position, not time.
+ */
+function runOff([x1, y1, x2, y2]: Curve, t: number, held: number, span: number) {
+  if (!span) return []
+  const hold = HOLD_MS / span
+  const past = held > 0 ? held / span : t + hold
+  const lead = 1 - t + (HOLD_MS - held) / span
+  const kOut = slope(x2, y2, 1, 1) ?? slope(x1, y1, 1, 1) ?? 1
+  const kIn = slope(0, 0, x1, y1) ?? slope(0, 0, x2, y2) ?? 1
+  return [
+    { x: 1 + past, y: 1 + kOut * past },
+    { x: -lead, y: -kIn * lead },
+  ]
+    .map((p) => ({ ...p, opacity: falloff(p.x, p.y) }))
+    .filter((p) => p.opacity > 0)
+}
+
+/** The dot and its guide lines to the time and progress axes. */
+function Cursor({ x, y, opacity }: { x: number; y: number; opacity?: number }) {
+  return (
+    <g opacity={opacity}>
+      <line x1={x} x2={x} y1={-PAD} y2={1 + PAD} className={styles.playhead} />
+      <line x1={-PAD} x2={x} y1={sy(y)} y2={sy(y)} className={styles.playheadH} />
+      <circle cx={x} cy={sy(y)} r={0.018} className={styles.playDot} />
+    </g>
+  )
+}
+
 /** Everything on the plot that moves with time, so a frame re-renders only this. */
 function Playhead({ clock, curve, samples, intervals }: { clock: Clock; curve: Curve; samples: number[]; intervals: number }) {
-  const { t } = useClock(clock)
+  const { t, held, span } = useClock(clock)
   const y = solve(curve, t)
   const active = Math.round(t * intervals)
   return (
@@ -241,9 +294,10 @@ function Playhead({ clock, curve, samples, intervals }: { clock: Clock; curve: C
           data-active={i === active || undefined}
         />
       ))}
-      <line x1={t} x2={t} y1={-PAD} y2={1 + PAD} className={styles.playhead} />
-      <line x1={-PAD} x2={t} y1={sy(y)} y2={sy(y)} className={styles.playheadH} />
-      <circle cx={t} cy={sy(y)} r={0.018} className={styles.playDot} />
+      {held <= 0 && <Cursor x={t} y={y} />}
+      {runOff(curve, t, held, span).map((p, i) => (
+        <Cursor key={i} {...p} />
+      ))}
     </>
   )
 }
