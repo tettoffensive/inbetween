@@ -62,13 +62,62 @@ export type Speed = 1 | 0.25 | 0.1
  * always reads as the enter leg (frame 0 = start). Omit it for subjects with
  * no exit leg (Rotate).
  */
+/** Playback time, kept outside React state so a frame doesn't re-render the app. */
+export type ClockState = {
+  t: number
+  /** Like t, but keeps running through the hold (> 1) so effects can follow through. */
+  waveT: number
+  /** Completed runs. Odd runs play the opposite change (exit); rotation accumulates. */
+  cycle: number
+}
+export type Clock = {
+  get: () => ClockState
+  subscribe: (fn: () => void) => () => void
+}
+
+function createClock() {
+  let state: ClockState = { t: 0, waveT: 0, cycle: 0 }
+  const subs = new Set<() => void>()
+  return {
+    get: () => state,
+    set: (next: ClockState) => {
+      state = next
+      subs.forEach((fn) => fn())
+    },
+    subscribe: (fn: () => void) => {
+      subs.add(fn)
+      return () => void subs.delete(fn)
+    },
+  }
+}
+
+/** Re-render with the clock. For small readouts only; per-frame motion should use `useClockEffect`. */
+export function useClock(clock: Clock): ClockState {
+  return useSyncExternalStore(clock.subscribe, clock.get)
+}
+
+/** Re-renders only when the loop flips between enter and exit legs. */
+export function useExitLeg(clock: Clock): boolean {
+  return useSyncExternalStore(clock.subscribe, () => clock.get().cycle % 2 === 1)
+}
+
+/**
+ * Run `apply` on every clock tick and after every render, without re-rendering.
+ * For writing styles straight to the DOM.
+ */
+export function useClockEffect(clock: Clock, apply: (s: ClockState) => void) {
+  const applyRef = useRef(apply)
+  useLayoutEffect(() => {
+    applyRef.current = apply
+    apply(clock.get())
+  })
+  useLayoutEffect(() => clock.subscribe(() => applyRef.current(clock.get())), [clock])
+}
+
 export function usePlayback(duration: number, speed: Speed = 1, toEnterTime?: (t: number) => number) {
   const span = duration / speed
   const reduced = useReducedMotion()
-  const [t, setT] = useState(0)
-  const [cycle, setCycle] = useState(0)
-  /** Like t, but keeps running through the hold (> 1) so effects can follow through. */
-  const [waveT, setWaveT] = useState(0)
+  const [clock] = useState(createClock)
   const [playing, setPlayingState] = useState(!reduced)
   const tRef = useRef(0)
   const cycleRef = useRef(0)
@@ -78,26 +127,27 @@ export function usePlayback(duration: number, speed: Speed = 1, toEnterTime?: (t
     toEnterRef.current = toEnterTime
   })
 
-  const setPlaying = useCallback((v: SetStateAction<boolean>) => {
-    const next = typeof v === 'function' ? v(playingRef.current) : v
-    playingRef.current = next
-    if (!next) {
-      // Pausing mid exit leg: keep the subject still and move the time
-      // instead, then count this loop as an enter leg. Paused, the timeline
-      // always reads as the enter leg, and resuming flows into the next
-      // exit leg without a snap.
-      const map = toEnterRef.current
-      if (map && cycleRef.current % 2 === 1) {
-        const tt = map(tRef.current)
-        tRef.current = tt
-        setT(tt)
-        setWaveT(tt)
-        cycleRef.current += 1
-        setCycle(cycleRef.current)
+  const setPlaying = useCallback(
+    (v: SetStateAction<boolean>) => {
+      const next = typeof v === 'function' ? v(playingRef.current) : v
+      playingRef.current = next
+      if (!next) {
+        // Pausing mid exit leg: keep the subject still and move the time
+        // instead, then count this loop as an enter leg. Paused, the timeline
+        // always reads as the enter leg, and resuming flows into the next
+        // exit leg without a snap.
+        const map = toEnterRef.current
+        if (map && cycleRef.current % 2 === 1) {
+          const tt = map(tRef.current)
+          tRef.current = tt
+          cycleRef.current += 1
+          clock.set({ t: tt, waveT: tt, cycle: cycleRef.current })
+        }
       }
-    }
-    setPlayingState(next)
-  }, [])
+      setPlayingState(next)
+    },
+    [clock],
+  )
 
   useEffect(() => {
     if (!playing) return
@@ -114,29 +164,28 @@ export function usePlayback(duration: number, speed: Speed = 1, toEnterTime?: (t
         if (hold <= 0) {
           tRef.current = 0
           cycleRef.current += 1
-          setCycle(cycleRef.current)
         }
       } else {
         tRef.current = Math.min(1, tRef.current + dt / span)
         if (tRef.current >= 1) hold = HOLD_MS
       }
-      setT(tRef.current)
-      setWaveT(hold > 0 ? 1 + (HOLD_MS - hold) / span : tRef.current)
+      clock.set({
+        t: tRef.current,
+        waveT: hold > 0 ? 1 + (HOLD_MS - hold) / span : tRef.current,
+        cycle: cycleRef.current,
+      })
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [playing, span])
+  }, [playing, span, clock])
 
   const scrub = (value: number) => {
     setPlaying(false)
     tRef.current = value
-    setT(value)
-    setWaveT(value)
+    clock.set({ t: value, waveT: value, cycle: cycleRef.current })
   }
-  /** Odd loops play the opposite change (exit). */
-  const exitLeg = cycle % 2 === 1
-  return { t, waveT, cycle, exitLeg, playing, setPlaying, scrub }
+  return { clock: clock as Clock, playing, setPlaying, scrub }
 }
 
 export function useElementWidth<T extends HTMLElement>(ref: RefObject<T | null>) {

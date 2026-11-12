@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { DrawingPinFilledIcon, DrawingPinIcon, PauseIcon, PlayIcon } from '@radix-ui/react-icons'
 import { TICK_RATES, frameCount, sample, solve, type Curve, type TickRate } from '../lib/bezier'
 import type { Subject } from '../lib/useEditor'
-import { useElementWidth, fmtShortcut, type Speed } from '../hooks/hooks'
+import { useClock, useClockEffect, useExitLeg, useElementWidth, fmtShortcut, type Clock, type Speed } from '../hooks/hooks'
 import { Segmented } from './Segmented'
 import { Tip } from './Tip'
 import { DurationSlider } from './Controls'
@@ -37,12 +37,9 @@ export function Stage({
   duration,
   subject,
   onSubject,
-  t,
-  waveT,
+  clock,
   speed,
   onSpeed,
-  cycle,
-  exitLeg,
   playing,
   onPlaying,
   onScrub,
@@ -56,15 +53,10 @@ export function Stage({
   duration: number
   subject: Subject
   onSubject: (s: Subject) => void
-  t: number
-  /** Time for the ruler wave; continues past 1 during the hold. */
-  waveT: number
+  /** Playback time; read by the parts that move, so a frame doesn't re-render the stage. */
+  clock: Clock
   speed: Speed
   onSpeed: (s: Speed) => void
-  /** Completed loop runs; rotation accumulates across them. */
-  cycle: number
-  /** Playing the opposite change (exit) on this loop. */
-  exitLeg: boolean
   playing: boolean
   onPlaying: (p: boolean) => void
   onScrub: (t: number) => void
@@ -82,7 +74,7 @@ export function Stage({
       </header>
 
       <div className={styles.lanes}>
-        <Lane curve={curve} t={t} waveT={waveT} cycle={cycle} exitLeg={exitLeg} subject={subject} intervals={intervals} label={reference ? 'Current' : undefined} onion={onion} />
+        <Lane curve={curve} clock={clock} subject={subject} intervals={intervals} label={reference ? 'Current' : undefined} onion={onion} />
         <AnimatePresence initial={false}>
           {reference && (
             <motion.div
@@ -92,7 +84,7 @@ export function Stage({
               exit={{ opacity: 0, height: 0, clipPath: 'inset(0 0 100% 0)' }}
               transition={{ type: 'spring', duration: 0.4, bounce: 0 }}
             >
-              <Lane curve={reference} t={t} waveT={waveT} cycle={cycle} exitLeg={exitLeg} subject={subject} intervals={intervals} label="Reference" reference onion={onion} />
+              <Lane curve={reference} clock={clock} subject={subject} intervals={intervals} label="Reference" reference onion={onion} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -122,21 +114,7 @@ export function Stage({
             </span>
           </button>
         </Tip>
-        <Slider.Root
-          className={styles.scrub}
-          min={0}
-          max={1}
-          step={1 / intervals}
-          value={[t]}
-          onValueChange={([v]) => onScrub(v)}
-          aria-label="Scrub time"
-        >
-          <Slider.Track className={styles.scrubTrack}>
-            <TickMarks intervals={intervals} />
-            <Slider.Range className={styles.scrubRange} />
-          </Slider.Track>
-          <Slider.Thumb className={styles.scrubThumb} />
-        </Slider.Root>
+        <Scrubber clock={clock} intervals={intervals} onScrub={onScrub} />
       </footer>
 
       {/* Settings: one label column, controls right-aligned to the same edge. */}
@@ -237,6 +215,28 @@ function DurationField({ value, onChange }: { value: number; onChange: (ms: numb
   )
 }
 
+/** The only part of the transport that re-renders per frame. */
+function Scrubber({ clock, intervals, onScrub }: { clock: Clock; intervals: number; onScrub: (t: number) => void }) {
+  const { t } = useClock(clock)
+  return (
+    <Slider.Root
+      className={styles.scrub}
+      min={0}
+      max={1}
+      step={1 / intervals}
+      value={[t]}
+      onValueChange={([v]) => onScrub(v)}
+      aria-label="Scrub time"
+    >
+      <Slider.Track className={styles.scrubTrack}>
+        <TickMarks intervals={intervals} />
+        <Slider.Range className={styles.scrubRange} />
+      </Slider.Track>
+      <Slider.Thumb className={styles.scrubThumb} />
+    </Slider.Root>
+  )
+}
+
 const TickMarks = memo(function TickMarks({ intervals }: { intervals: number }) {
   return (
     <div className={styles.ticks} aria-hidden>
@@ -249,10 +249,7 @@ const TickMarks = memo(function TickMarks({ intervals }: { intervals: number }) 
 
 function Lane({
   curve,
-  t,
-  waveT,
-  cycle,
-  exitLeg,
+  clock,
   subject,
   intervals,
   label,
@@ -260,11 +257,7 @@ function Lane({
   onion,
 }: {
   curve: Curve
-  t: number
-  waveT: number
-  cycle: number
-  /** Playing the opposite change (exit) on this loop. */
-  exitLeg: boolean
+  clock: Clock
   subject: Subject
   intervals: number
   /** Only shown when comparing against a reference. */
@@ -273,15 +266,17 @@ function Lane({
   reference?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const subjectRef = useRef<HTMLDivElement>(null)
+  const rulerRef = useRef<HTMLDivElement>(null)
   const width = useElementWidth(ref)
   // Realistic UI distance, centred in the lane.
   const travel = Math.max(0, Math.min(TRAVEL, width - SIZE))
   const start = Math.max(0, (width - travel - SIZE) / 2)
-  const p = solve(curve, t)
   // Odd runs play the opposite change (exit), still along the curve.
   // Rotation instead keeps turning forward.
+  // Re-renders only when the leg flips, for the onion skin.
+  const exitLeg = useExitLeg(clock)
   const back = subject !== 'rotate' && exitLeg
-  const y = back ? 1 - p : p
   const samples = useMemo(() => sample(curve, intervals), [curve, intervals])
   // One wave crest sweeping the ruler at a steady rate (driven by time), so
   // it finishes exactly when the motion does. Every tick swells by its
@@ -289,37 +284,68 @@ function Lane({
   const x0 = start + SIZE / 2
   // The ruler charts the curve itself, which runs forward on every leg, so it
   // never mirrors: the wave always sweeps left → right with time.
-  const wave = (pos: number, at = waveT) => {
+  const wave = (pos: number, at: number) => {
     const d = ((pos - at) * travel) / WAVE_WIDTH
     return Math.exp(-(d * d * d * d))
   }
   // Faint ticks at a fixed pixel pitch so they never merge at long durations.
   const fineCount = Math.max(2, Math.round(travel / FINE_PITCH))
-  // The crest steps tick to tick so it always reads as one tall tick between
-  // two shorter ones, never two equal halves.
-  const fineCrest = Math.round(waveT * fineCount) / fineCount
 
   // Each subject animates one property from a realistic UI start state.
   // `v` is the displayed value (reversed on exit legs); `q` the curve progress.
+  // Every property is always set, so switching subject leaves nothing behind.
   const center = start + travel / 2
-  const styleFor = (v: number, q: number): React.CSSProperties => {
+  const styleFor = (v: number, q: number, cycle = clock.get().cycle) => {
+    const s = { transform: '', left: '', width: `${SIZE}px`, opacity: '' }
     switch (subject) {
       case 'x':
-        return { transform: `translateX(${start + v * travel}px)` }
+        s.transform = `translateX(${start + v * travel}px)`
+        break
       case 'scale':
-        return { left: center, transform: `scale(${0.6 + 0.4 * v})` }
+        s.left = `${center}px`
+        s.transform = `scale(${0.6 + 0.4 * v})`
+        break
       case 'resize': {
         // Grows wider from its centre, like a container changing size.
         const w = Math.max(8, SIZE + v * Math.min(travel, RESIZE_RANGE))
-        return { left: center + SIZE / 2 - w / 2, width: w }
+        s.left = `${center + SIZE / 2 - w / 2}px`
+        s.width = `${w}px`
+        break
       }
       case 'fade':
-        return { left: center, opacity: Math.min(1, Math.max(0, v)) }
+        s.left = `${center}px`
+        s.opacity = String(Math.min(1, Math.max(0, v)))
+        break
       case 'rotate':
-        return { left: center, transform: `rotate(${(cycle + q) * 180}deg)` }
+        s.left = `${center}px`
+        s.transform = `rotate(${(cycle + q) * 180}deg)`
+        break
     }
+    return s
   }
-  const subjectStyle = styleFor(y, p)
+
+  // Per frame: write straight to the DOM instead of re-rendering the lane.
+  useClockEffect(clock, ({ t, waveT, cycle }) => {
+    const p = solve(curve, t)
+    // Leg from this tick, not the last render: the render lags the flip by a frame.
+    const exit = subject !== 'rotate' && cycle % 2 === 1
+    if (subjectRef.current) Object.assign(subjectRef.current.style, styleFor(exit ? 1 - p : p, p, cycle))
+    const ticks = rulerRef.current?.children
+    if (!ticks) return
+    // The crest steps tick to tick so it always reads as one tall tick between
+    // two shorter ones, never two equal halves.
+    const fineCrest = Math.round(waveT * fineCount) / fineCount
+    for (let i = 0; i <= fineCount; i++) {
+      const g = wave(i / fineCount, fineCrest)
+      const el = ticks[i] as HTMLElement
+      el.style.transform = `scaleY(${1 + 1.1 * g})`
+      el.style.opacity = String(0.13 + 0.22 * g)
+    }
+    samples.forEach((v, i) => {
+      const el = ticks[fineCount + 1 + i] as HTMLElement | undefined
+      if (el) el.style.transform = `scaleY(${1 + 0.55 * wave(v, waveT)})`
+    })
+  })
 
   return (
     <div className={styles.lane} data-reference={reference || undefined} data-labelled={label ? '' : undefined}>
@@ -333,38 +359,21 @@ function Lane({
             <div
               key={i}
               className={styles.onion}
-              style={{ width: SIZE, height: SIZE, ...styleFor(back ? 1 - v : v, v) }}
+              style={{ height: SIZE, ...styleFor(back ? 1 - v : v, v) }}
               aria-hidden
             />
           ))}
-        <div
-          className={styles.subject}
-          data-kind={subject}
-          style={{ width: SIZE, height: SIZE, ...subjectStyle }}
-        >
-        </div>
+        <div ref={subjectRef} className={styles.subject} data-kind={subject} style={{ height: SIZE }} />
       </div>
       {/* Spacing ruler: faint ticks are an even time grid (where linear motion
           would be), bold ticks are where each drawing actually lands. A single
-          wave sweeps through both at a steady rate. */}
-      <div className={styles.ruler} aria-hidden>
-        {Array.from({ length: fineCount + 1 }, (_, i) => {
-          const u = i / fineCount
-          const g = wave(u, fineCrest)
-          return (
-            <span
-              key={`f${i}`}
-              className={styles.fine}
-              style={{ left: x0 + u * travel, transform: `scaleY(${1 + 1.1 * g})`, opacity: 0.13 + 0.22 * g }}
-            />
-          )
-        })}
+          wave sweeps through both at a steady rate. Heights are set per frame. */}
+      <div ref={rulerRef} className={styles.ruler} aria-hidden>
+        {Array.from({ length: fineCount + 1 }, (_, i) => (
+          <span key={`f${i}`} className={styles.fine} style={{ left: x0 + (i / fineCount) * travel }} />
+        ))}
         {samples.map((v, i) => (
-          <span
-            key={i}
-            className={styles.mark}
-            style={{ left: x0 + v * travel, transform: `scaleY(${1 + 0.55 * wave(v)})` }}
-          />
+          <span key={i} className={styles.mark} style={{ left: x0 + v * travel }} />
         ))}
       </div>
     </div>

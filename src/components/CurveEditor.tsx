@@ -3,6 +3,7 @@ import { motion } from 'motion/react'
 import { ContextMenu } from 'radix-ui'
 import { CopyIcon, DrawingPinFilledIcon, DrawingPinIcon, LoopIcon, ResetIcon } from '@radix-ui/react-icons'
 import { BEND_RANGE, bend, clampCurve, frameCount, nearestParam, pointAt, sample, solve, type Curve, type TickRate } from '../lib/bezier'
+import { useClock, type Clock } from '../hooks/hooks'
 import styles from './CurveEditor.module.css'
 
 // Plot space: x in [0,1] time, y in [-0.2, 1.2] progress. Square viewBox with margin.
@@ -24,7 +25,7 @@ export function CurveEditor({
   changeId,
   reference,
   preview,
-  t,
+  clock,
   duration,
   tickRate,
   onDragStart,
@@ -41,7 +42,8 @@ export function CurveEditor({
   reference: Curve | null
   /** Where the hovered Feel nudge would put the curve. */
   preview: Curve | null
-  t: number
+  /** Playback time; only the playhead layer re-renders with it. */
+  clock: Clock
   duration: number
   tickRate: TickRate
   onDragStart: () => void
@@ -54,7 +56,6 @@ export function CurveEditor({
   const dotsId = `dots-${useId().replace(/:/g, '')}`
   const intervals = frameCount(duration, tickRate)
   const samples = useMemo(() => sample(shown, intervals), [shown, intervals])
-  const y = solve(shown, t)
 
   const toPlot = (e: PointerEvent) => {
     const r = boxRef.current!.getBoundingClientRect()
@@ -193,24 +194,7 @@ export function CurveEditor({
               <circle cx={pointAt(curve, bendU)[0]} cy={sy(pointAt(curve, bendU)[1])} r={0.016} className={styles.bendDot} />
             )}
 
-                {/* Spacing projected onto the progress axis: each frame's height.
-                    Equal-time ticks below, resulting spacing on the left. */}
-                {samples.map((v, i) => (
-                  <line
-                    key={i}
-                    x1={-0.05}
-                    x2={-0.012}
-                    y1={sy(v)}
-                    y2={sy(v)}
-                    className={styles.spacing}
-                    data-active={i === Math.round(t * intervals) || undefined}
-                  />
-                ))}
-
-                {/* playhead */}
-                <line x1={t} x2={t} y1={-PAD} y2={1 + PAD} className={styles.playhead} />
-                <line x1={-PAD} x2={t} y1={sy(y)} y2={sy(y)} className={styles.playheadH} />
-                <circle cx={t} cy={sy(y)} r={0.018} className={styles.playDot} />
+                <Playhead clock={clock} curve={shown} samples={samples} intervals={intervals} />
               </svg>
 
               <button
@@ -236,6 +220,33 @@ export function CurveEditor({
 }
 
 const fmt = (n: number) => n.toFixed(2)
+
+/** Everything on the plot that moves with time, so a frame re-renders only this. */
+function Playhead({ clock, curve, samples, intervals }: { clock: Clock; curve: Curve; samples: number[]; intervals: number }) {
+  const { t } = useClock(clock)
+  const y = solve(curve, t)
+  const active = Math.round(t * intervals)
+  return (
+    <>
+      {/* Spacing projected onto the progress axis: each frame's height.
+          Equal-time ticks below, resulting spacing on the left. */}
+      {samples.map((v, i) => (
+        <line
+          key={i}
+          x1={-0.05}
+          x2={-0.012}
+          y1={sy(v)}
+          y2={sy(v)}
+          className={styles.spacing}
+          data-active={i === active || undefined}
+        />
+      ))}
+      <line x1={t} x2={t} y1={-PAD} y2={1 + PAD} className={styles.playhead} />
+      <line x1={-PAD} x2={t} y1={sy(y)} y2={sy(y)} className={styles.playheadH} />
+      <circle cx={t} cy={sy(y)} r={0.018} className={styles.playDot} />
+    </>
+  )
+}
 
 export type CurveActions = {
   pinned: boolean

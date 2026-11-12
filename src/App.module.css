@@ -26,10 +26,21 @@
   width: 30px;
   height: 30px;
   flex: none;
-  border-radius: calc(9px * var(--k-radius));
+  /* App-icon squircle: a continuous superellipse corner, as on Apple's icons.
+     Without corner-shape support it falls back to Apple's 22.37% rounded rect. */
+  border-radius: 22.37%;
   background: linear-gradient(180deg, var(--primary-top), var(--primary-bottom));
   border: 1px solid var(--primary-border);
   box-shadow: var(--primary-highlight), var(--primary-shadow);
+}
+
+@supports (corner-shape: squircle) {
+  .logo {
+    /* A squircle corner sits inside a round one, so it needs a larger radius
+       to cover the same span of the edge. */
+    border-radius: 34%;
+    corner-shape: squircle;
+  }
 }
 
 .logo span {

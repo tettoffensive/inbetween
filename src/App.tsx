@@ -66,7 +66,7 @@ export default function App() {
         e.preventDefault()
         const frames = frameCount(state.duration, state.tickRate)
         const dir = e.key === 'ArrowRight' ? 1 : -1
-        const frame = Math.round(playback.t * frames) + dir
+        const frame = Math.round(playback.clock.get().t * frames) + dir
         const next = Math.min(frames, Math.max(0, frame)) / frames
         // Scrub pauses playback as it seeks, which matches the expected
         // "stepped" feel; we also round to the nearest frame so successive
@@ -157,7 +157,7 @@ export default function App() {
             changeId={state.changeId}
             reference={state.reference}
             preview={preview}
-            t={playback.t}
+            clock={playback.clock}
             duration={state.duration}
             tickRate={state.tickRate}
             onDragStart={() => dispatch({ type: 'checkpoint', drag: true })}
@@ -183,12 +183,9 @@ export default function App() {
           duration={state.duration}
           subject={state.subject}
           onSubject={(value) => dispatch({ type: 'subject', value })}
-          t={playback.t}
-          waveT={playback.waveT}
+          clock={playback.clock}
           speed={speed}
           onSpeed={setSpeed}
-          cycle={playback.cycle}
-          exitLeg={playback.exitLeg}
           playing={playback.playing}
           onPlaying={playback.setPlaying}
           onScrub={playback.scrub}
