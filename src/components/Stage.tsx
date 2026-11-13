@@ -308,7 +308,9 @@ function Lane({
       case 'resize': {
         // Grows wider from its centre, like a container changing size.
         const w = Math.max(8, SIZE + v * Math.min(travel, RESIZE_RANGE))
-        s.left = `${center + SIZE / 2 - w / 2}px`
+        // Position via transform (compositor) so only width triggers layout.
+        s.left = '0px'
+        s.transform = `translateX(${center + SIZE / 2 - w / 2}px)`
         s.width = `${w}px`
         break
       }
